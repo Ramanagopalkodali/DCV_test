@@ -21,7 +21,13 @@ const data = {
         "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", 
         "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", 
         "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", 
-        "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"
+        "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming",
+        // U.S. District and Territories:
+        "District of Columbia",
+        "Puerto Rico", 
+        "Guam", 
+        "Virgin Islands of the U.S.", 
+        "American Samoa"
     ],
     diseases: [
         "Cancer",
