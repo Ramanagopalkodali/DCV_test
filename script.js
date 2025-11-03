@@ -37,7 +37,7 @@ const data = {
         "Influenza",
         "Tuberculosis"
     ],
-    years: generateYears(2010) // Generates years 2010 through 2025
+    years: generateYears(2000) 
 };
 
 // --- 2. Function to Populate Dropdowns ---
