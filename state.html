@@ -1,43 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>State Details</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h2 id="state-title" style="text-align:center;"></h2>
-  <div id="details" style="padding:20px;"></div>
+  <header class="dashboard-header">
+    <div class="logo"><span class="logo-text">STATE DETAILS</span></div>
+  </header>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <main class="dashboard-main-content">
+    <h2 id="title" style="text-align:center;"></h2>
+    <div id="details" style="padding:20px;"></div>
+    <canvas id="stateChart" style="width:90%; max-width:800px; margin:20px auto; display:block;"></canvas>
+  </main>
+
+  <script src="assets/libs/xlsx.full.min.js"></script>
+  <script src="assets/libs/chart.4.4.0.min.js"></script>
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const state = params.get("state");
-    const disease = params.get("disease");
-    const year = parseInt(params.get("year"));
-
-    document.getElementById("state-title").textContent = `${state} (${year})`;
-
     (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const state = params.get('state');
+      const disease = params.get('disease');
+      document.getElementById('title').textContent = `${state} - Case Trends`;
+
       const res = await fetch(disease);
       const data = await res.arrayBuffer();
       const workbook = XLSX.read(data);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json(sheet);
-      const row = json.find(r => (r["State"] === state || r["State"].includes(state)) && r["Year"] === year);
 
-      const div = document.getElementById("details");
-      if (row) {
-        Object.entries(row).forEach(([k, v]) => {
-          const p = document.createElement("p");
-          p.innerHTML = `<strong>${k}:</strong> ${v}`;
-          div.appendChild(p);
-        });
-      } else {
-        div.textContent = "No detailed data found for this state.";
-      }
+      const stateData = json.filter(r => r["State"] === state);
+      const years = stateData.map(r => r["Year"]);
+      const cases = stateData.map(r => r["Cases"]);
+
+      // Display table
+      const div = document.getElementById('details');
+      div.innerHTML = `<p><strong>State:</strong> ${state}</p><p><strong>Total Records:</strong> ${stateData.length}</p>`;
+
+      // Chart.js Bar Graph: Cases vs Year
+      const ctx = document.getElementById('stateChart');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: years,
+          datasets: [{
+            label: 'Cases by Year',
+            data: cases,
+            backgroundColor: 'rgba(255,99,132,0.6)',
+            borderColor: 'rgba(255,99,132,1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: { y: { beginAtZero: true, title: { display: true, text: 'Cases' } } }
+        }
+      });
     })();
   </script>
 </body>
 </html>
+
