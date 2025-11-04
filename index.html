@@ -9,27 +9,30 @@
 </head>
 <body>
   <header class="dashboard-header">
-    <div class="logo-text">USA Disease Dashboard</div>
-  </header>
+  <div class="logo-text">USA Disease Dashboard</div>
+
+  <div class="header-controls">
+    <label for="disease-select" class="filter-title">Disease Data:</label>
+    <select id="disease-select" class="filter-dropdown">
+      <option value="">-- Select Disease --</option>
+      <option value="TB_data.xlsx">Tuberculosis</option>
+      <option value="HIV_data.xlsx">HIV</option>
+      <option value="Malaria_data.xlsx">Malaria</option>
+      <option value="Dengue_data.xlsx">Dengue</option>
+    </select>
+
+    <label for="year-select" class="filter-title">Select Year:</label>
+    <select id="year-select" class="filter-dropdown" disabled>
+      <option value="">-- Select Year --</option>
+    </select>
+
+    <button id="search-btn" class="search-button" disabled>Search</button>
+  </div>
+</header>
+
 
   <main class="dashboard-main-content">
-    <div class="search-filters">
-      <label for="disease-select" class="filter-title">Select Disease:</label>
-      <select id="disease-select" class="filter-dropdown">
-        <option value="">-- Select Disease --</option>
-        <option value="TB_data.xlsx">Tuberculosis</option>
-        <option value="HIV_data.xlsx">HIV</option>
-        <option value="Malaria_data.xlsx">Malaria</option>
-        <option value="Dengue_data.xlsx">Dengue</option>
-      </select>
-
-      <label for="year-select" class="filter-title">Select Year:</label>
-      <select id="year-select" class="filter-dropdown" disabled>
-        <option value="">-- Select Year --</option>
-      </select>
-
-      <button id="search-btn" class="search-button" disabled>Search</button>
-    </div>
+    
   </main>
 
   <script src="script.js"></script>
