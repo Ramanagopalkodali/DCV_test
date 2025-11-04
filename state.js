@@ -4,25 +4,35 @@ const state = params.get('state');
 
 document.getElementById('state-title').textContent = `Disease Trends for ${state}`;
 
+// Back button
+document.getElementById("backBtn").addEventListener("click", () => {
+  window.history.back();
+});
+
 async function loadState() {
-  const res = await fetch(diseaseFile);
-  const buf = await res.arrayBuffer();
-  const wb = XLSX.read(buf);
+  // === Load GeoJSON for state map ===
+  const [geoRes, excelRes] = await Promise.all([
+    fetch("usa_states.geojson"),
+    fetch(diseaseFile)
+  ]);
+  const geoData = await geoRes.json();
+  const excelData = await excelRes.arrayBuffer();
+  const wb = XLSX.read(excelData);
   const ws = wb.Sheets[wb.SheetNames[0]];
   const data = XLSX.utils.sheet_to_json(ws);
 
-  // Filter only selected state
+  // === Filter for this state ===
   const stateData = data.filter(r => r["State"] === state);
   if (stateData.length === 0) {
     document.getElementById("detail-table").innerHTML = "<tr><td>No data found for this state.</td></tr>";
     return;
   }
 
-  // Extract columns
+  // Extract year and case data
   const years = stateData.map(r => r["Year"]);
   const cases = stateData.map(r => r["Cases"]);
 
-  // Build dynamic table (includes all columns, not just Cases)
+  // === Build Table Dynamically ===
   const columns = Object.keys(stateData[0]);
   let tableHTML = "<tr>" + columns.map(c => `<th>${c}</th>`).join("") + "</tr>";
   stateData.forEach(row => {
@@ -30,7 +40,26 @@ async function loadState() {
   });
   document.getElementById("detail-table").innerHTML = tableHTML;
 
-  // === Bar Chart: Cases per Year ===
+  // === Draw the State Map ===
+  const map = L.map('state-map').setView([37.8, -96], 4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+  const stateLayer = L.geoJson(geoData, {
+    style: feature => ({
+      fillColor: feature.properties.NAME === state ? "#e74c3c" : "#ccc",
+      weight: 1,
+      color: "white",
+      fillOpacity: feature.properties.NAME === state ? 0.8 : 0.3
+    }),
+    onEachFeature: (feature, layer) => {
+      if (feature.properties.NAME === state) {
+        map.fitBounds(layer.getBounds());
+        layer.bindPopup(`<strong>${feature.properties.NAME}</strong>`).openPopup();
+      }
+    }
+  }).addTo(map);
+
+  // === Bar Chart ===
   const barCtx = document.getElementById("barChart");
   new Chart(barCtx, {
     type: "bar",
@@ -47,60 +76,43 @@ async function loadState() {
     options: {
       responsive: true,
       plugins: {
-        legend: { display: true },
-        title: {
-          display: true,
-          text: `${state} - Cases by Year`
-        }
+        title: { display: true, text: `${state} - Cases by Year` }
       },
       scales: {
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: "Cases" }
-        },
-        x: {
-          title: { display: true, text: "Year" }
-        }
+        y: { beginAtZero: true, title: { display: true, text: "Cases" } },
+        x: { title: { display: true, text: "Year" } }
       }
     }
   });
 
-  // === Line Chart: Trend Over Years ===
+  // === Line Chart ===
   const lineCtx = document.getElementById("lineChart");
   new Chart(lineCtx, {
     type: "line",
     data: {
       labels: years,
       datasets: [{
-        label: "Cases Trend",
+        label: "Trend Line",
         data: cases,
         fill: false,
         borderColor: "rgba(255, 99, 132, 1)",
         backgroundColor: "rgba(255, 99, 132, 0.2)",
         tension: 0.3,
-        pointRadius: 5
+        pointRadius: 4
       }]
     },
     options: {
       responsive: true,
       plugins: {
-        legend: { display: true },
-        title: {
-          display: true,
-          text: `${state} - Trend Line`
-        }
+        title: { display: true, text: `${state} - Trend Over Time` }
       },
       scales: {
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: "Cases" }
-        },
-        x: {
-          title: { display: true, text: "Year" }
-        }
+        y: { beginAtZero: true, title: { display: true, text: "Cases" } },
+        x: { title: { display: true, text: "Year" } }
       }
     }
   });
 }
 
 loadState();
+
