@@ -5,18 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>State Details</title>
   <link rel="stylesheet" href="style.css">
+
+  <!-- Leaflet & Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
   <header class="dashboard-header">
     <div class="logo-text">State-Level Disease Analysis</div>
+    <button id="backBtn" class="search-button" style="background:#4a90e2;">⬅ Back to USA Map</button>
   </header>
 
   <main class="dashboard-main-content">
     <h2 id="state-title"></h2>
+
+    <!-- State Map -->
+    <div id="state-map" style="height:400px; margin:20px 0; border-radius:8px;"></div>
+
+    <!-- Details Table -->
     <table id="detail-table" class="detail-table"></table>
 
+    <!-- Charts -->
     <h3 style="text-align:center; margin-top:30px;">Cases Over Time</h3>
     <canvas id="barChart" height="120"></canvas>
 
@@ -27,4 +38,5 @@
   <script src="state.js"></script>
 </body>
 </html>
+
 
