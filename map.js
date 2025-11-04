@@ -1,23 +1,15 @@
-// Mapping for mismatched names between Excel and GeoJSON
-const stateNameFix = {
-  "District of Columbia": "District of Columbia",
-  "Hawaii": "Hawaii",
-  "Alaska": "Alaska",
-  "New York State": "New York",
-  "California State": "California"
-  // Add other mappings if your Excel uses variations
-};
+const stateNameFix = { "New York State": "New York", "Calif.": "California", "DC": "District of Columbia" };
 
-const urlParams = new URLSearchParams(window.location.search);
-const diseaseFile = urlParams.get("disease");
-const selectedYear = parseInt(urlParams.get("year"));
+const params = new URLSearchParams(window.location.search);
+const diseaseFile = params.get('disease');
+const selectedYear = parseInt(params.get('year'));
 
-const map = L.map("map").setView([37.8, -96], 4);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+const map = L.map('map').setView([37.8, -96], 4);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 async function loadMap() {
   const [geoRes, excelRes] = await Promise.all([
-    fetch("usa_states.geojson"),
+    fetch('usa_states.geojson'),
     fetch(diseaseFile)
   ]);
 
@@ -31,32 +23,25 @@ async function loadMap() {
   const dataMap = {};
 
   yearData.forEach(r => {
-    const rawName = r["State"];
-    const corrected = stateNameFix[rawName] || rawName;
+    const raw = r["State"];
+    const corrected = stateNameFix[raw] || raw;
     dataMap[corrected] = r["Cases"] || 0;
   });
 
-  function getColor(value) {
-    return value > 10000 ? "#800026" :
-           value > 5000  ? "#BD0026" :
-           value > 1000  ? "#E31A1C" :
-           value > 500   ? "#FC4E2A" :
-           value > 100   ? "#FD8D3C" :
-           value > 50    ? "#FEB24C" :
-           value > 10    ? "#FED976" : "#FFEDA0";
+  function getColor(v) {
+    return v > 10000 ? "#800026" :
+           v > 5000 ? "#BD0026" :
+           v > 1000 ? "#E31A1C" :
+           v > 500  ? "#FC4E2A" :
+           v > 100  ? "#FD8D3C" :
+           v > 50   ? "#FEB24C" :
+           v > 10   ? "#FED976" : "#FFEDA0";
   }
 
   function style(feature) {
     const name = feature.properties.NAME;
     const value = dataMap[name] || 0;
-    return {
-      fillColor: getColor(value),
-      weight: 1,
-      opacity: 1,
-      color: "white",
-      dashArray: "3",
-      fillOpacity: 0.7
-    };
+    return { fillColor: getColor(value), weight: 1, opacity: 1, color: "white", dashArray: "3", fillOpacity: 0.7 };
   }
 
   function onEachFeature(feature, layer) {
@@ -69,6 +54,26 @@ async function loadMap() {
   }
 
   L.geoJson(geoData, { style, onEachFeature }).addTo(map);
-}
 
+  // === Chart.js Bar Graph ===
+  const ctx = document.getElementById('casesBarChart');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(dataMap),
+      datasets: [{
+        label: 'Cases by State',
+        data: Object.values(dataMap),
+        backgroundColor: 'rgba(54,162,235,0.6)',
+        borderColor: 'rgba(54,162,235,1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'Cases' } } }
+    }
+  });
+}
 loadMap();
+
