@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>State Details</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h2 id="state-title" style="text-align:center;"></h2>
+  <div id="details" style="padding:20px;"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const state = params.get("state");
+    const disease = params.get("disease");
+    const year = parseInt(params.get("year"));
+
+    document.getElementById("state-title").textContent = `${state} (${year})`;
+
+    (async () => {
+      const res = await fetch(disease);
+      const data = await res.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet);
+      const row = json.find(r => (r["State"] === state || r["State"].includes(state)) && r["Year"] === year);
+
+      const div = document.getElementById("details");
+      if (row) {
+        Object.entries(row).forEach(([k, v]) => {
+          const p = document.createElement("p");
+          p.innerHTML = `<strong>${k}:</strong> ${v}`;
+          div.appendChild(p);
+        });
+      } else {
+        div.textContent = "No detailed data found for this state.";
+      }
+    })();
+  </script>
+</body>
+</html>
