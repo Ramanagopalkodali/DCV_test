@@ -1,26 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>USA Disease Map</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="assets/libs/leaflet.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disease Map - USA</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
   <header class="dashboard-header">
-    <div class="logo"><span class="logo-text">USA MAP VIEW</span></div>
+    <div class="logo-text">Disease Spread Map - USA</div>
   </header>
 
   <main class="dashboard-main-content">
-    <h2 id="map-title" style="text-align:center;"></h2>
-    <div id="map" style="height: 600px;"></div>
-    <canvas id="casesBarChart" style="width:90%; max-width:1000px; margin:20px auto; display:block;"></canvas>
+    <div id="map"></div>
+    <canvas id="casesBarChart"></canvas>
   </main>
 
-  <script src="assets/libs/leaflet.js"></script>
-  <script src="assets/libs/xlsx.full.min.js"></script>
-  <script src="assets/libs/chart.4.4.0.min.js"></script>
   <script src="map.js"></script>
 </body>
 </html>
