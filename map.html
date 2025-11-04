@@ -13,6 +13,8 @@
 <body>
   <header class="dashboard-header">
     <div class="logo-text">Disease Spread Map - USA</div>
+    <button id="theme-toggle" class="theme-toggle">🌙</button>
+
   </header>
 
   <main class="dashboard-main-content">
@@ -21,5 +23,23 @@
   </main>
 
   <script src="map.js"></script>
+
+  <script>
+  const toggleButton = document.getElementById("theme-toggle");
+  const currentTheme = localStorage.getItem("theme") || "light";
+  document.documentElement.setAttribute("data-theme", currentTheme);
+  toggleButton.textContent = currentTheme === "dark" ? "☀️" : "🌙";
+
+  toggleButton.addEventListener("click", () => {
+    const newTheme =
+      document.documentElement.getAttribute("data-theme") === "dark"
+        ? "light"
+        : "dark";
+    document.documentElement.setAttribute("data-theme", newTheme);
+    localStorage.setItem("theme", newTheme);
+    toggleButton.textContent = newTheme === "dark" ? "☀️" : "🌙";
+  });
+</script>
+
 </body>
 </html>
