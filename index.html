@@ -1,48 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disease Spread Report</title>
-    <link rel="stylesheet" href="style.css"> 
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Disease Tracker</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <header class="dashboard-header">
+    <div class="logo"><span class="logo-text">DISEASE TRACKER</span></div>
+    <div class="search-filters">
+      <h3 class="filter-title">Disease Data:</h3>
 
-    <header class="dashboard-header">
-        <div class="logo">
-            <span class="logo-text">DISEASE TRACKER</span>
-        </div>
+      <select id="disease-select" class="filter-dropdown">
+        <option value="">-- Select Disease --</option>
+        <option value="TB_data.xlsx">Tuberculosis</option>
+        <!-- You can add more disease Excel files here -->
+      </select>
 
-        <div class="search-filters">
-            <h3 class="filter-title">Disease Data:</h3>
-            
-            <select id="state-select" class="filter-dropdown">
-                <option value="">-- Select State --</option>
-            </select>
-            
-            <select id="disease-select" class="filter-dropdown">
-                <option value="">-- Select Disease --</option>
-            </select>
-            
-            <select id="year-select" class="filter-dropdown">
-                <option value="">-- Select Year --</option>
-            </select>
+      <select id="year-select" class="filter-dropdown" disabled>
+        <option value="">-- Select Year --</option>
+      </select>
 
-            <button id="search-btn" class="search-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                </svg>
-                Search
-            </button>
-        </div>
-    </header>
+      <button id="search-btn" class="search-button" disabled>Search</button>
+    </div>
+  </header>
 
-    <main class="dashboard-main-content">
-        <h2 style="text-align: center;">Welcome to the Disease Tracker Portal </h2>
-        
-        <p>Use the filters above to find specific reports on disease spread by state, disease, and year.</p>
-    </main>
+  <main class="dashboard-main-content">
+    <h2 style="text-align:center;">Welcome to the Disease Tracker Portal</h2>
+    <p>Use the filters above to explore disease spread by state and year.</p>
+  </main>
 
-    <script src="script.js"></script> 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
+
+
