@@ -1,49 +1,44 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const diseaseSelect = document.getElementById('disease-select');
-  const yearSelect = document.getElementById('year-select');
-  const searchBtn = document.getElementById('search-btn');
+document.addEventListener("DOMContentLoaded", () => {
+  const diseaseSelect = document.getElementById("disease-select");
+  const yearSelect = document.getElementById("year-select");
+  const searchBtn = document.getElementById("search-btn");
 
-  let selectedDisease = null;
-
-  diseaseSelect.addEventListener('change', async () => {
-    selectedDisease = diseaseSelect.value;
-    yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
-
-    if (!selectedDisease) {
+  diseaseSelect.addEventListener("change", async () => {
+    const diseaseFile = diseaseSelect.value;
+    if (!diseaseFile) {
       yearSelect.disabled = true;
       searchBtn.disabled = true;
       return;
     }
 
-    const years = await getYearsFromExcel(selectedDisease);
+    // Fetch Excel and extract unique years
+    const res = await fetch(diseaseFile);
+    const buf = await res.arrayBuffer();
+    const wb = XLSX.read(buf);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws);
+
+    const years = [...new Set(data.map(r => r["Year"]))].sort((a, b) => a - b);
+    yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
     years.forEach(y => {
-      const opt = document.createElement('option');
+      const opt = document.createElement("option");
       opt.value = y;
       opt.textContent = y;
       yearSelect.appendChild(opt);
     });
+
     yearSelect.disabled = false;
   });
 
-  yearSelect.addEventListener('change', () => {
+  yearSelect.addEventListener("change", () => {
     searchBtn.disabled = !yearSelect.value;
   });
 
-  searchBtn.addEventListener('click', () => {
-    const disease = selectedDisease;
+  searchBtn.addEventListener("click", () => {
+    const diseaseFile = diseaseSelect.value;
     const year = yearSelect.value;
-    if (disease && year) {
-      window.location.href = `map.html?disease=${encodeURIComponent(disease)}&year=${encodeURIComponent(year)}`;
+    if (diseaseFile && year) {
+      window.location.href = `map.html?disease=${encodeURIComponent(diseaseFile)}&year=${year}`;
     }
   });
 });
-
-async function getYearsFromExcel(filePath) {
-  const res = await fetch(filePath);
-  const ab = await res.arrayBuffer();
-  const wb = XLSX.read(ab);
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(sheet);
-  const years = [...new Set(rows.map(r => r["Year"]))];
-  return years.sort((a, b) => a - b);
-}
