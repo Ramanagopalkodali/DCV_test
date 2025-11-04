@@ -1,82 +1,218 @@
-/* Basic Reset and Font */
+/* ================================
+   GLOBAL & BASIC STYLES
+================================ */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f6f9; /* Light grey background for the main body */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f6f9; /* Light grey background */
+  color: #1a1a1a;
 }
 
-/* Dashboard Header Styling (Top Bar) */
+/* ================================
+   HEADER (TOP NAV)
+================================ */
 .dashboard-header {
-    background-color: #0b1c31; /* Dark blue background */
-    color: #ffffff;
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #0b1c31; /* Dark navy blue */
+  color: #ffffff;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .logo-text {
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: 1px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 
-/* Filter Bar Styling */
+/* ================================
+   FILTER BAR
+================================ */
 .search-filters {
-    display: flex;
-    align-items: center;
-    gap: 15px; /* Space between filter elements */
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .filter-title {
-    font-size: 0.9rem;
-    font-weight: 500;
-    margin: 0;
-    color: #c0c4c8; 
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+  color: #c0c4c8;
 }
 
-/* Dropdown Styling */
+/* ================================
+   DROPDOWN STYLING
+================================ */
 .filter-dropdown {
-    padding: 8px 12px;
-    border: 1px solid #3c4c61;
-    border-radius: 4px;
-    background-color: #1a2c41; /* Slightly lighter dark background for input */
-    color: #ffffff;
-    font-size: 0.9rem;
-    appearance: none; 
-    cursor: pointer;
-    transition: background-color 0.2s;
+  padding: 8px 12px;
+  border: 1px solid #3c4c61;
+  border-radius: 4px;
+  background-color: #1a2c41;
+  color: #ffffff;
+  font-size: 0.9rem;
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.filter-dropdown:hover, .filter-dropdown:focus {
-    background-color: #2a3c51;
-    border-color: #4a5c71;
-    outline: none;
+.filter-dropdown:hover,
+.filter-dropdown:focus {
+  background-color: #2a3c51;
+  border-color: #4a5c71;
+  outline: none;
 }
 
-/* Search Button Styling */
+.filter-dropdown:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ================================
+   SEARCH BUTTON
+================================ */
 .search-button {
-    padding: 8px 15px;
-    background-color: #e55331; /* Orange/Red accent color */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: background-color 0.2s;
+  padding: 8px 15px;
+  background-color: #e55331;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.2s;
 }
 
 .search-button:hover {
-    background-color: #cc492b;
+  background-color: #cc492b;
 }
 
-/* Main Content Area */
-.dashboard-main-content {
-    padding: 20px;
+.search-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
+
+/* ================================
+   MAIN CONTENT
+================================ */
+.dashboard-main-content {
+  padding: 20px;
+}
+
+/* ================================
+   MAP STYLING
+================================ */
+#map {
+  height: 600px;
+  border-radius: 8px;
+  margin: 10px auto;
+  max-width: 100%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* ================================
+   LEAFLET LEGEND
+================================ */
+.leaflet-control .info.legend {
+  background: #ffffff;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  border-radius: 4px;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+}
+
+.leaflet-control .info.legend i {
+  width: 18px;
+  height: 18px;
+  float: left;
+  margin-right: 6px;
+  opacity: 0.8;
+}
+
+/* ================================
+   CHART STYLING (MAP + STATE PAGE)
+================================ */
+canvas {
+  display: block;
+  margin: 25px auto;
+  max-width: 1000px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 10px;
+}
+
+/* ================================
+   STATE DETAILS TABLE
+================================ */
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.detail-table th {
+  text-align: left;
+  width: 30%;
+  padding: 8px;
+  background-color: #f2f4f7;
+  border-bottom: 1px solid #ddd;
+  color: #333;
+}
+
+.detail-table td {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  color: #222;
+}
+
+.detail-table tr:last-child th,
+.detail-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ================================
+   RESPONSIVE DESIGN
+================================ */
+@media (max-width: 768px) {
+  .search-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-dropdown,
+  .search-button {
+    width: 100%;
+  }
+
+  #map {
+    height: 500px;
+  }
+
+  canvas {
+    max-width: 95%;
+  }
+}
+
+/* ================================
+   MISCELLANEOUS
+================================ */
+p {
+  line-height: 1.6;
+}
+
+h2, h3 {
+  color: #0b1c31;
+}
+
