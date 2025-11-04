@@ -1,36 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Disease Tracker</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disease Spread Dashboard - USA</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <header class="dashboard-header">
-    <div class="logo"><span class="logo-text">DISEASE TRACKER</span></div>
-    <div class="search-filters">
-      <h3 class="filter-title">Disease Data:</h3>
+    <div class="logo-text">USA Disease Dashboard</div>
+  </header>
 
+  <main class="dashboard-main-content">
+    <div class="search-filters">
+      <label for="disease-select" class="filter-title">Select Disease:</label>
       <select id="disease-select" class="filter-dropdown">
         <option value="">-- Select Disease --</option>
         <option value="TB_data.xlsx">Tuberculosis</option>
+        <option value="HIV_data.xlsx">HIV</option>
+        <option value="Malaria_data.xlsx">Malaria</option>
+        <option value="Dengue_data.xlsx">Dengue</option>
       </select>
 
+      <label for="year-select" class="filter-title">Select Year:</label>
       <select id="year-select" class="filter-dropdown" disabled>
         <option value="">-- Select Year --</option>
       </select>
 
       <button id="search-btn" class="search-button" disabled>Search</button>
     </div>
-  </header>
-
-  <main class="dashboard-main-content">
-    <h2 style="text-align:center;">Welcome to the Disease Tracker Portal</h2>
-    <p style="text-align:center;">Select a disease and year, then view the interactive USA map with data visualization.</p>
   </main>
 
-  <script src="assets/libs/xlsx.full.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
+
