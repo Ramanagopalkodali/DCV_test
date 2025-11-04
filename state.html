@@ -1,66 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>State Details</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header class="dashboard-header">
-    <div class="logo"><span class="logo-text">STATE DETAILS</span></div>
+    <div class="logo-text">State-Level Disease Analysis</div>
   </header>
 
   <main class="dashboard-main-content">
-    <h2 id="title" style="text-align:center;"></h2>
-    <div id="details" style="padding:20px;"></div>
-    <canvas id="stateChart" style="width:90%; max-width:800px; margin:20px auto; display:block;"></canvas>
+    <h2 id="state-title"></h2>
+    <table id="detail-table" class="detail-table"></table>
+
+    <h3 style="text-align:center; margin-top:30px;">Cases Over Time</h3>
+    <canvas id="barChart" height="120"></canvas>
+
+    <h3 style="text-align:center; margin-top:40px;">Trend Line</h3>
+    <canvas id="lineChart" height="120"></canvas>
   </main>
 
-  <script src="assets/libs/xlsx.full.min.js"></script>
-  <script src="assets/libs/chart.4.4.0.min.js"></script>
-  <script>
-    (async () => {
-      const params = new URLSearchParams(window.location.search);
-      const state = params.get('state');
-      const disease = params.get('disease');
-      document.getElementById('title').textContent = `${state} - Case Trends`;
-
-      const res = await fetch(disease);
-      const data = await res.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sheet);
-
-      const stateData = json.filter(r => r["State"] === state);
-      const years = stateData.map(r => r["Year"]);
-      const cases = stateData.map(r => r["Cases"]);
-
-      // Display table
-      const div = document.getElementById('details');
-      div.innerHTML = `<p><strong>State:</strong> ${state}</p><p><strong>Total Records:</strong> ${stateData.length}</p>`;
-
-      // Chart.js Bar Graph: Cases vs Year
-      const ctx = document.getElementById('stateChart');
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: years,
-          datasets: [{
-            label: 'Cases by Year',
-            data: cases,
-            backgroundColor: 'rgba(255,99,132,0.6)',
-            borderColor: 'rgba(255,99,132,1)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: { y: { beginAtZero: true, title: { display: true, text: 'Cases' } } }
-        }
-      });
-    })();
-  </script>
+  <script src="state.js"></script>
 </body>
 </html>
 
