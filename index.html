@@ -1,41 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Disease Spread Dashboard - USA</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
+
 <body>
   <header class="dashboard-header">
-  <div class="logo-text">USA Disease Dashboard</div>
+    <div class="logo-text">USA Disease Dashboard</div>
 
-  <div class="header-controls">
-    <label for="disease-select" class="filter-title">Disease Data:</label>
-    <select id="disease-select" class="filter-dropdown">
-      <option value="">-- Select Disease --</option>
-      <option value="TB_data.xlsx">Tuberculosis</option>
-      <option value="HIV_data.xlsx">HIV</option>
-      <option value="Malaria_data.xlsx">Malaria</option>
-      <option value="Dengue_data.xlsx">Dengue</option>
-    </select>
+    <div class="header-controls">
+      <label for="disease-select" class="filter-title">Disease Data:</label>
+      <select id="disease-select" class="filter-dropdown">
+        <option value="">-- Select Disease --</option>
+        <option value="TB_data.xlsx">Tuberculosis</option>
+        <option value="HIV_data.xlsx">HIV</option>
+        <option value="Malaria_data.xlsx">Malaria</option>
+        <option value="Dengue_data.xlsx">Dengue</option>
+      </select>
 
-    <label for="year-select" class="filter-title">Select Year:</label>
-    <select id="year-select" class="filter-dropdown" disabled>
-      <option value="">-- Select Year --</option>
-    </select>
+      <label for="year-select" class="filter-title">Select Year:</label>
+      <select id="year-select" class="filter-dropdown" disabled>
+        <option value="">-- Select Year --</option>
+      </select>
 
-    <button id="search-btn" class="search-button" disabled>Search</button>
-  </div>
-</header>
-
+      <button id="search-btn" class="search-button" disabled>Search</button>
+      <button id="theme-toggle" class="theme-toggle">🌙</button>
+    </div>
+  </header>
 
   <main class="dashboard-main-content">
-    
+    <p>Select a disease and year from the top bar to view results.</p>
   </main>
 
   <script src="script.js"></script>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    const toggleButton = document.getElementById("theme-toggle");
+    const currentTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", currentTheme);
+    toggleButton.textContent = currentTheme === "dark" ? "☀️" : "🌙";
+
+    toggleButton.addEventListener("click", () => {
+      const newTheme =
+        document.documentElement.getAttribute("data-theme") === "dark"
+          ? "light"
+          : "dark";
+      document.documentElement.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+      toggleButton.textContent = newTheme === "dark" ? "☀️" : "🌙";
+    });
+  </script>
 </body>
 </html>
+
 
