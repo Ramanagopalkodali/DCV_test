@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Disease Tracker</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -15,7 +15,6 @@
       <select id="disease-select" class="filter-dropdown">
         <option value="">-- Select Disease --</option>
         <option value="TB_data.xlsx">Tuberculosis</option>
-        <!-- You can add more disease Excel files here -->
       </select>
 
       <select id="year-select" class="filter-dropdown" disabled>
@@ -28,12 +27,10 @@
 
   <main class="dashboard-main-content">
     <h2 style="text-align:center;">Welcome to the Disease Tracker Portal</h2>
-    <p>Use the filters above to explore disease spread by state and year.</p>
+    <p style="text-align:center;">Select a disease and year, then view the interactive USA map with data visualization.</p>
   </main>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="assets/libs/xlsx.full.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
-
-
