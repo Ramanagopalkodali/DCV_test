@@ -21,7 +21,7 @@ themeToggle.addEventListener('click', () => {
 const datasetsMap = {
   'HIV': 'HIV_data.xlsx',
   'TB': 'TB_data.xlsx',
-  'Malaria': 'Malaria_data.xlsx',
+  'Diabetes': 'Diabetes.xlsx',
   'Dengue': 'Dengue_data.xlsx'
 };
 
