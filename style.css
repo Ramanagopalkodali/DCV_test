@@ -28,103 +28,95 @@
 html,body{height:100%; margin:0; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:var(--bg-gradient); color:var(--text);}
 a{color:var(--accent); text-decoration:none}
 
-/* header with controls area */
+/* ================= HEADER AREA ================= */
 .header{
   position:sticky; top:0; z-index:90;
   display:flex; justify-content:space-between; align-items:center;
-  gap:12px; padding:10px var(--page-pad); background:rgba(255,255,255,0.85);
+  gap:16px; padding:10px var(--page-pad); background:rgba(255,255,255,0.85);
   backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(0,0,0,0.04);
-  /* ensure nothing inside can accidentally enlarge the header */
+  border-bottom: 1px solid rgba(0,0,0,0.05);
   overflow: hidden;
 }
-[data-theme="dark"] .header{ background:rgba(255,255,255,0.02); border-bottom:1px solid rgba(255,255,255,0.03); }
+[data-theme="dark"] .header{ background:rgba(255,255,255,0.02); border-bottom:1px solid rgba(255,255,255,0.05); }
 
 /* brand (logo + text) */
 .brand{display:flex; gap:12px; align-items:center}
-
-/* logo container — keeps visual gradient when no image provided
-   and acts as a strict bounding box when an <img> is used */
 .brand .logo{
-  width:44px;
-  height:44px;
-  min-width:44px;            /* prevents it from shrinking too small */
-  min-height:44px;
+  width:44px; height:44px; min-width:44px; min-height:44px;
   border-radius:10px;
   background:linear-gradient(135deg,var(--accent),var(--accent-2));
   box-shadow:0 8px 26px rgba(20,102,242,0.12);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;           /* important: keeps child image from overflowing */
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
 }
-
-/* If you insert an <img> inside .logo, this constrains it so it
-   doesn't grow the header or distort aspect ratio */
 .brand .logo img{
-  display:block;
-  height:100%;               /* fill the .logo box's height */
-  max-height:100%;
-  width:auto;                /* preserve aspect ratio */
-  object-fit:contain;        /* avoid stretching */
-  user-select:none;
-  -webkit-user-drag:none;
+  display:block; height:100%; max-height:100%; width:auto; object-fit:contain;
 }
-
-/* brand text */
 .brand .title{display:flex; flex-direction:column}
 .brand h1{margin:0; font-size:18px; font-family:Poppins, Inter; font-weight:700}
 .brand small{color:var(--muted)}
 
-/* header controls: dataset/year/search placed here */
-.header-controls{display:flex; gap:10px; align-items:center}
-.header-controls select, .header-controls input{padding:8px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.06); background:transparent; color:inherit}
-.header-controls button{padding:8px 10px; border-radius:8px; border:none; background:var(--accent); color:#fff; font-weight:700; cursor:pointer}
+/* refined header controls (right side) */
+.header-controls{
+  display:flex; align-items:center; gap:12px;
+}
+.header-controls label{
+  font-weight:600; color:var(--text);
+}
+.header-controls select{
+  padding:6px 8px; border-radius:8px; border:1px solid rgba(0,0,0,0.1);
+  background:transparent; color:inherit; font-size:14px;
+}
+.btn-light{
+  background:#e8ebf1; color:var(--text);
+  padding:8px 12px; border-radius:8px; font-weight:600; border:none; cursor:pointer;
+}
+.btn-green{
+  background:#19a37a; color:#fff;
+  padding:8px 12px; border-radius:8px; font-weight:600; border:none; cursor:pointer;
+}
 
-/* container & grid */
+/* theme toggle */
+.theme-btn{
+  width:38px; height:38px; border-radius:50%;
+  background:var(--card-bg); box-shadow:var(--shadow-1);
+  border:none; display:flex; align-items:center; justify-content:center;
+  font-size:18px; cursor:pointer;
+  transition:transform 0.2s ease, background 0.3s ease;
+}
+.theme-btn:hover{ transform:scale(1.07); }
+[data-theme="dark"] .theme-btn{ background:rgba(255,255,255,0.05); }
+
+/* ================= OTHER EXISTING STYLES ================= */
 .container{max-width:1250px; margin:18px auto; padding:0 var(--page-pad);}
 .grid{display:grid; grid-template-columns:1fr 380px; gap:20px}
 @media (max-width:980px){ .grid{grid-template-columns:1fr} }
 
-/* cards & headings */
 .card{background:var(--card-bg); border-radius:12px; padding:16px; box-shadow:var(--shadow-1); border:1px solid rgba(0,0,0,0.03)}
 .section-title{font-size:20px; font-weight:700; margin:8px 4px 14px 4px; text-align:left}
 .chart-canvas{width:100% !important; height:420px !important; display:block}
 .chart-small{height:260px !important}
 
-/* map */
 #map{height:var(--map-height); border-radius:10px; overflow:hidden}
-
-/* heatmap canvas wrapper */
 .heatmap-wrapper{height:420px; overflow:auto}
-
-/* legend */
 .info.legend{padding:8px; border-radius:8px; font-size:13px}
-
-/* misc */
 .note{font-size:13px; color:var(--muted); margin-top:8px}
 
-/* Make sure state map has the same height/appearance as the main map */
-#stateMap {
-  height: var(--map-height);
-  border-radius: 10px;
-  overflow: hidden;
-}
+#stateMap { height: var(--map-height); border-radius: 10px; overflow: hidden; }
 
-/* Chart canvas heights to avoid extremely tall bars */
 .chart-canvas { width:100% !important; height:360px !important; display:block; }
 .chart-small { height:260px !important; }
 #casesBar, #barChart { height:360px !important; }
 #casesHist, #histChart { height:280px !important; }
 #matrixHeatmap { height:420px !important; }
 
-/* small screens: make header and logo slightly smaller */
-@media (max-width: 600px) {
-  .header { padding:8px 12px; }
+@media (max-width:600px){
+  .header { flex-wrap:wrap; padding:8px 12px; }
   .brand .logo { width:36px; height:36px; min-width:36px; min-height:36px; border-radius:8px; }
   .brand h1 { font-size:16px; }
   .brand small { display:none; }
+  .header-controls { flex-wrap:wrap; gap:8px; }
 }
+
 
 
 
