@@ -1,4 +1,4 @@
-/* map.js - final: disease key -> filename mapping, auto-fill years, scaled charts, tooltips */
+/* map.js - corrected version (safeDestroy => used consistently, matrix var unified, small robustness checks) */
 
 const params = new URLSearchParams(window.location.search);
 let diseaseKey = params.get('disease') || sessionStorage.getItem('lastDisease') || 'HIV';
@@ -21,9 +21,9 @@ const themeToggleHeader = document.getElementById('themeToggleHeader');
 if (dsSelectHeader) dsSelectHeader.value = diseaseKey;
 
 // theme persist
-const setTheme = (t) => { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('theme', t); themeToggleHeader.textContent = t === 'dark' ? '☀️' : '🌙'; }
+const setTheme = (t) => { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('theme', t); if (themeToggleHeader) themeToggleHeader.textContent = t === 'dark' ? '☀️' : '🌙'; }
 setTheme(localStorage.getItem('theme') || 'light');
-themeToggleHeader.addEventListener('click', () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark') );
+if (themeToggleHeader) themeToggleHeader.addEventListener('click', () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark') );
 
 // helper — pick filename: if JSON exists prefer JSON (faster)
 async function pickFilenameForKey(key) {
@@ -40,6 +40,7 @@ async function pickFilenameForKey(key) {
 
 // utility formatting
 function formatTick(v){
+  if (v === null || v === undefined) return '';
   if (Math.abs(v) >= 1e6) return (v/1e6).toFixed(1).replace(/\.0$/,'') + 'M';
   if (Math.abs(v) >= 1e3) return (v/1e3).toFixed(1).replace(/\.0$/,'') + 'k';
   return ''+v;
@@ -52,7 +53,7 @@ function roundUpNice(n){
 }
 
 // fetch rows from filename (json/csv or xlsx)
-function isJSONFile(name){ return String(name).toLowerCase().endsWith('.json') || name.toLowerCase().endsWith('.csv'); }
+function isJSONFile(name){ const s = String(name||'').toLowerCase(); return s.endsWith('.json') || s.endsWith('.csv'); }
 async function fetchRowsFromFile(name){
   if (!name) throw new Error('No filename provided');
   if (isJSONFile(name)) {
@@ -61,7 +62,7 @@ async function fetchRowsFromFile(name){
     if (name.toLowerCase().endsWith('.json')) return await r.json();
     // csv
     const txt = await r.text();
-    const lines = txt.trim().split('\n');
+    const lines = txt.trim().split('\n').filter(Boolean);
     const headers = lines[0].split(',').map(h=>h.trim());
     return lines.slice(1).map(l => {
       const cols = l.split(',');
@@ -83,7 +84,8 @@ const legendWrap = document.getElementById('legendWrap');
 const matrixCanvas = document.getElementById('matrixHeatmap');
 
 // chart globals
-let barChart=null, lineChart=null, histChart=null, matrixChart=null, leafletMap=null;
+let barChart = null, lineChart = null, histChart = null;
+let matrixChartRef = null, leafletMap = null;
 let geoCache = null;
 
 async function loadGeo(){
@@ -108,6 +110,7 @@ async function populateYearSelectForDisease(key) {
     const fname = await pickFilenameForKey(key);
     const rows = await fetchRowsFromFile(fname);
     const years = Array.from(new Set(rows.map(r=>Number(r.Year)).filter(Boolean))).sort((a,b)=>a-b);
+    if (!yearSelectHeader) return;
     yearSelectHeader.innerHTML = '';
     years.forEach(y => { const opt = document.createElement('option'); opt.value = y; opt.textContent = y; yearSelectHeader.appendChild(opt); });
     // if selectedYear present, set
@@ -115,7 +118,7 @@ async function populateYearSelectForDisease(key) {
     else if (years.length) yearSelectHeader.value = years[years.length-1];
   } catch(err){
     console.warn('populateYearSelect error', err);
-    yearSelectHeader.innerHTML = '<option value="">No years</option>';
+    if (yearSelectHeader) yearSelectHeader.innerHTML = '<option value="">No years</option>';
   }
 }
 
@@ -134,7 +137,10 @@ async function drawChoropleth(geo,stateValues,minV,maxV){
     leafletMap = L.map('map', { scrollWheelZoom:false }).setView([37.8, -96], 4);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(leafletMap);
   } else {
-    leafletMap.eachLayer(l => { if (l && l instanceof L.GeoJSON) leafletMap.removeLayer(l); });
+    // remove existing GeoJSON layers only (not tiles)
+    leafletMap.eachLayer(layer => {
+      if (layer && layer.feature && layer.feature.type === 'Feature') leafletMap.removeLayer(layer);
+    });
   }
   function style(f){
     const v = stateValues[f.properties.NAME]; return { fillColor: colorRamp(v,minV,maxV), weight:1, color:'#fff', fillOpacity:0.92 };
@@ -142,7 +148,7 @@ async function drawChoropleth(geo,stateValues,minV,maxV){
   function onEach(f, layer){
     const name = f.properties.NAME;
     const v = stateValues[name] != null ? stateValues[name] : 'No data';
-    layer.bindTooltip(`<strong>${name}</strong><br/>Cases: ${v.toLocaleString()}`, { direction:'auto' });
+    layer.bindTooltip(`<strong>${name}</strong><br/>Cases: ${typeof v === 'number' ? v.toLocaleString() : v}`, { direction:'auto' });
     layer.on('click', () => {
       saveMapState();
       window.location.href = `state.html?state=${encodeURIComponent(name)}&disease=${encodeURIComponent(diseaseKey)}&year=${encodeURIComponent(selectedYear)}`;
@@ -154,10 +160,8 @@ async function drawChoropleth(geo,stateValues,minV,maxV){
   if (st && st.disease === diseaseKey && String(st.year) === String(selectedYear)) leafletMap.setView(st.center, st.zoom);
 }
 
-// safe destroy chart
+// safe destroy chart (use uniformly)
 function safeDestroy(c){ try { if (c && typeof c.destroy === 'function') c.destroy(); } catch(e){} }
-
-
 
 // draw USA aggregate trend line
 function drawLine(rows){
@@ -166,7 +170,9 @@ function drawLine(rows){
   const yrs = Object.keys(yearAgg).map(Number).sort((a,b)=>a-b);
   const vals = yrs.map(y=>yearAgg[y]);
   safeDestroy(lineChart);
-  const ctx = document.getElementById('casesLine').getContext('2d');
+  const ctxEl = document.getElementById('casesLine');
+  if (!ctxEl) return;
+  const ctx = ctxEl.getContext('2d');
   lineChart = new Chart(ctx, {
     type:'line',
     data:{ labels: yrs, datasets:[{ label:'USA total', data: vals, borderColor:'#0f6ef6', backgroundColor:'rgba(15,110,246,0.08)', fill:true, tension:0.3 }]},
@@ -174,12 +180,11 @@ function drawLine(rows){
   });
 }
 
-/* map.js replacement: improved drawBar & drawHist */
+/* improved drawBar & drawHist */
 
 function niceSuggestedMax(arr) {
   const maxVal = Math.max(...(arr||[0]));
   if (!isFinite(maxVal) || maxVal <= 0) return 10;
-  // choose a slightly larger round number (1.15x then round)
   const raw = maxVal * 1.15;
   const p = Math.pow(10, Math.floor(Math.log10(raw)));
   const nice = Math.ceil(raw / p) * p;
@@ -194,7 +199,7 @@ function drawBar(stateValues, year, minV, maxV){
   const data = Object.values(stateValues);
   const bg = data.map(v => colorRamp(v, minV, maxV));
 
-  safeDestroyChart(barChart);
+  safeDestroy(barChart);
   const suggestedMax = niceSuggestedMax(data);
 
   barChart = new Chart(ctx, {
@@ -212,7 +217,7 @@ function drawBar(stateValues, year, minV, maxV){
               const idx = ctx.dataIndex;
               const lab = labels[idx];
               const val = ctx.raw;
-              return `${lab} — ${val.toLocaleString()} cases`;
+              return `${lab} — ${typeof val === 'number' ? val.toLocaleString() : val} cases`;
             }
           }
         }
@@ -230,7 +235,6 @@ function drawHist(values) {
   if (!ctxEl) return;
   const ctx = ctxEl.getContext('2d');
 
-  // sensible bins: Freedman–Diaconis-ish if enough points, otherwise sqrt rule
   const n = values.length || 1;
   const iqr = (() => {
     if (n < 4) return 0;
@@ -241,14 +245,13 @@ function drawHist(values) {
   })();
   let bins;
   if (iqr > 0) {
-    const h = 2 * iqr / Math.cbrt(n); // Freedman–Diaconis bin width
+    const h = 2 * iqr / Math.cbrt(n);
     const range = Math.max(...values) - Math.min(...values) || 1;
     bins = Math.max(4, Math.min(12, Math.round(range / h) || Math.round(Math.sqrt(n))));
   } else {
     bins = Math.max(4, Math.min(12, Math.round(Math.sqrt(n))));
   }
 
-  // compute histogram counts
   const minV = Math.min(...values);
   const maxV = Math.max(...values);
   const width = (maxV - minV) / (bins || 1) || 1;
@@ -263,7 +266,7 @@ function drawHist(values) {
     return `${a}–${b}`;
   });
 
-  safeDestroyChart(histChart);
+  safeDestroy(histChart);
   histChart = new Chart(ctx, {
     type: 'bar',
     data: { labels, datasets: [{ label: 'Count', data: counts, backgroundColor: 'rgba(99,102,241,0.9)', maxBarThickness: 40 }]},
@@ -289,21 +292,19 @@ function drawHist(values) {
 
 
 // matrix heatmap (matrix plugin) with fallback handled in drawMatrixHeatmap function
-let matrixChartRef = null;
 async function drawMatrixHeatmap(pivot, years, states, minV, maxV) {
-  // same logic as previous robust version: try matrix plugin; fallback to small html table
-  // (I'll reuse the robust fallback approach provided earlier)
-  // For brevity here we call the robust helper from earlier code by invoking drawMatrixHeatmapFallback if plugin missing.
   try {
-    // if matrix plugin not present, throw
-    if (!window.Chart || !Chart.defaults || !Chart.controllers || !Chart.registry.getController('matrix')) throw new Error('matrix plugin not loaded');
-    // prepare data
+    const hasMatrix = window.Chart && (Chart.registry && typeof Chart.registry.getController === 'function' ? !!Chart.registry.getController('matrix') : !!Chart.controllers && !!Chart.controllers.matrix);
+    if (!hasMatrix) throw new Error('matrix plugin not loaded');
+
     const xLabels = years.map(String), yLabels = states.slice();
     const data = [];
     years.forEach((yr, xi) => states.forEach((st, yi) => data.push({ x: xi, y: yi, v: pivot[st][yr] || 0 })));
-    // destroy old
-    if (matrixChartRef) matrixChartRef.destroy();
-    const ctx = document.getElementById('matrixHeatmap').getContext('2d');
+
+    if (matrixChartRef) safeDestroy(matrixChartRef);
+    const canvasEl = document.getElementById('matrixHeatmap');
+    if (!canvasEl) throw new Error('matrixHeatmap canvas not found');
+    const ctx = canvasEl.getContext('2d');
     matrixChartRef = new Chart(ctx, {
       type: 'matrix',
       data: { datasets:[{ label:'State×Year', data, width: ({chart}) => (chart.chartArea.width / xLabels.length) - 1, height: ({chart}) => (chart.chartArea.height / yLabels.length) - 1, backgroundColor: ctx => colorRamp(ctx.dataset.data[ctx.dataIndex].v, minV, maxV) }]},
@@ -332,12 +333,11 @@ async function drawMatrixHeatmap(pivot, years, states, minV, maxV) {
     return;
   } catch(err) {
     console.warn('matrix plugin missing or error, falling back to table:', err);
-    // fallback — show a compact pivot table (last 8 years)
     const wrapper = document.querySelector('.heatmap-wrapper');
     const canvas = document.getElementById('matrixHeatmap');
     if (canvas) canvas.style.display = 'none';
     let fb = document.querySelector('.heatmap-fallback');
-    if (!fb) { fb = document.createElement('div'); fb.className = 'heatmap-fallback card'; wrapper.appendChild(fb); }
+    if (!fb) { fb = document.createElement('div'); fb.className = 'heatmap-fallback card'; if (wrapper) wrapper.appendChild(fb); }
     const yearsToShow = years.slice(-8);
     let html = '<div style="font-weight:700;margin-bottom:8px;">Heatmap (fallback)</div>';
     html += '<div style="overflow:auto;"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="padding:6px;text-align:left">State</th>';
@@ -345,7 +345,7 @@ async function drawMatrixHeatmap(pivot, years, states, minV, maxV) {
     html += '</tr></thead><tbody>';
     states.forEach(s => { html += `<tr><td style="padding:6px;font-weight:600">${s}</td>`; yearsToShow.forEach(y => { const v = pivot[s][y] || 0; const bg = colorRamp(v,minV,maxV); html += `<td style="padding:6px;text-align:center;background:${bg}">${v}</td>`; }); html += '</tr>'; });
     html += '</tbody></table></div>';
-    fb.innerHTML = html;
+    if (fb) fb.innerHTML = html;
   }
 }
 
@@ -360,7 +360,6 @@ function renderLegend(minV,maxV){
 
 // CSV export (matrixChart or fallback table)
 function exportVisibleCSV(){
-  // try matrix chart
   if (matrixChartRef && matrixChartRef.data && matrixChartRef.data.datasets && matrixChartRef.data.datasets[0]) {
     const xLabels = matrixChartRef.options.scales.x.labels;
     const yLabels = matrixChartRef.options.scales.y.labels;
@@ -371,7 +370,6 @@ function exportVisibleCSV(){
     yLabels.forEach(st => { const row=['"'+st.replace(/"/g,'""')+'"']; xLabels.forEach(yr=>row.push(String(grid[st] && grid[st][yr] ? grid[st][yr] : 0))); rows.push(row.join(',')); });
     const blob = new Blob([rows.join('\n')], { type:'text/csv;charset=utf-8;' }); const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download='heatmap_export.csv'; a.click(); URL.revokeObjectURL(u); return;
   }
-  // fallback table
   const fbTable = document.querySelector('.heatmap-fallback table');
   if (fbTable) {
     const rows = []; fbTable.querySelectorAll('tr').forEach(tr => { const cols = Array.from(tr.querySelectorAll('th,td')).map(td => `"${td.textContent.replace(/"/g,'""')}"`); rows.push(cols.join(',')); });
@@ -382,34 +380,28 @@ function exportVisibleCSV(){
 
 // main load (populate year select first then draw)
 async function loadAll() {
-  diseaseKey = dsSelectHeader.value || diseaseKey;
-  selectedYear = yearSelectHeader.value || selectedYear;
+  diseaseKey = dsSelectHeader ? dsSelectHeader.value : diseaseKey;
+  selectedYear = yearSelectHeader ? yearSelectHeader.value : selectedYear;
   sessionStorage.setItem('lastDisease', diseaseKey);
   sessionStorage.setItem('lastYear', selectedYear);
-  selectedInfoEl.textContent = `Dataset: ${diseaseKey} · Year: ${selectedYear}`;
-  totalCasesEl.textContent = 'Loading...';
+  if (selectedInfoEl) selectedInfoEl.textContent = `Dataset: ${diseaseKey} · Year: ${selectedYear}`;
+  if (totalCasesEl) totalCasesEl.textContent = 'Loading...';
 
   try {
     const fname = await pickFilenameForKey(diseaseKey);
-    // fetch rows
     const rows = await fetchRowsFromFile(fname);
-    // years & states
     const years = Array.from(new Set(rows.map(r=>Number(r.Year)).filter(Boolean))).sort((a,b)=>a-b);
-    const states = Array.from(new Set(rows.map(r=>String(r.State).trim()))).sort();
-    // ensure header year select shows available years
-    yearSelectHeader.innerHTML = ''; years.forEach(y => { const o=document.createElement('option'); o.value=y; o.textContent=y; yearSelectHeader.appendChild(o); });
-    if (years.includes(Number(selectedYear))) yearSelectHeader.value = selectedYear; else { selectedYear = years[years.length-1]; yearSelectHeader.value = selectedYear; }
-    // pivot
+    const states = Array.from(new Set(rows.map(r=>String(r.State || r.state || '').trim()))).sort();
+    if (yearSelectHeader) { yearSelectHeader.innerHTML = ''; years.forEach(y => { const o=document.createElement('option'); o.value=y; o.textContent=y; yearSelectHeader.appendChild(o); }); }
+    if (years.includes(Number(selectedYear))) { if (yearSelectHeader) yearSelectHeader.value = selectedYear; } else { selectedYear = years[years.length-1]; if (yearSelectHeader) yearSelectHeader.value = selectedYear; }
     const pivot = {}; states.forEach(s=>pivot[s]={});
-    rows.forEach(r => { const s = String(r.State).trim(); const y = Number(r.Year); const c = Number(r.Cases)||0; pivot[s][y] = (pivot[s][y]||0) + c; });
-    // state values selected year
+    rows.forEach(r => { const s = String(r.State || r.state || '').trim(); const y = Number(r.Year || r.year); const c = Number(r.Cases || r.cases) || 0; pivot[s][y] = (pivot[s][y]||0) + c; });
     const stateValues = {}; states.forEach(s=>stateValues[s] = pivot[s][selectedYear] || 0);
     const vals = Object.values(stateValues);
-    const minV = Math.min(...vals), maxV = Math.max(...vals);
+    const minV = vals.length ? Math.min(...vals) : 0, maxV = vals.length ? Math.max(...vals) : 0;
     const total = vals.reduce((a,b)=>a+(b||0),0);
-    totalCasesEl.textContent = `Total USA Cases (${selectedYear}): ${total.toLocaleString()}`;
+    if (totalCasesEl) totalCasesEl.textContent = `Total USA Cases (${selectedYear}): ${total.toLocaleString()}`;
 
-    // draw map & charts
     const geo = await loadGeo();
     await drawChoropleth(geo, stateValues, minV, maxV);
     drawBar(stateValues, selectedYear, minV, maxV);
@@ -418,43 +410,38 @@ async function loadAll() {
     await drawMatrixHeatmap(pivot, years, states, minV, maxV);
     renderLegend(minV, maxV);
 
-    // ensure charts resized
     setTimeout(()=>{ [barChart, lineChart, histChart, matrixChartRef].forEach(ch => { try { ch && ch.resize && ch.resize(); } catch(e){} }); }, 200);
   } catch(err){
     console.error('loadAll error', err);
-    selectedInfoEl.textContent = 'Failed to load data (see console)';
-    totalCasesEl.textContent = '—';
-    // show fallback message in heatmap area
+    if (selectedInfoEl) selectedInfoEl.textContent = 'Failed to load data (see console)';
+    if (totalCasesEl) totalCasesEl.textContent = '—';
     const wrapper = document.querySelector('.heatmap-wrapper');
     if (wrapper) wrapper.innerHTML = `<div class="card" style="padding:12px;">Heatmap unavailable: ${err.message || 'error'}</div>`;
   }
 }
 
 // wire up header load/export
-loadHeader.addEventListener('click', () => { loadAll(); });
-downloadCSVHeader.addEventListener('click', () => exportVisibleCSV());
+if (loadHeader) loadHeader.addEventListener('click', () => { loadAll(); });
+if (downloadCSVHeader) downloadCSVHeader.addEventListener('click', () => exportVisibleCSV());
 
 // on initial load: set select and populate years then load
 (async () => {
   try {
-    // set disease dropdown if missing
     if (dsSelectHeader) dsSelectHeader.value = diseaseKey;
     await populateYearSelectForDisease(diseaseKey);
-    // if the select populates, set selectedYear if present
     if (yearSelectHeader && selectedYear) {
       const opt = Array.from(yearSelectHeader.options).find(o => o.value === String(selectedYear));
       if (opt) yearSelectHeader.value = selectedYear;
     }
-    // when user changes disease in header, repopulate years automatically
-    dsSelectHeader && dsSelectHeader.addEventListener('change', async () => {
+    if (dsSelectHeader) dsSelectHeader.addEventListener('change', async () => {
       diseaseKey = dsSelectHeader.value;
       await populateYearSelectForDisease(diseaseKey);
     });
-    // when user changes year in header store selection
-    yearSelectHeader && yearSelectHeader.addEventListener('change', () => { selectedYear = yearSelectHeader.value; sessionStorage.setItem('lastYear', selectedYear); });
+    if (yearSelectHeader) yearSelectHeader.addEventListener('change', () => { selectedYear = yearSelectHeader.value; sessionStorage.setItem('lastYear', selectedYear); });
     await loadAll();
   } catch(e){ console.error('init error', e); loadAll(); }
 })();
+
 
 
 
