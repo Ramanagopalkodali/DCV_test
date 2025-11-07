@@ -15,16 +15,7 @@
         <p>Interactive maps & state reports</p>
       </div>
     </div>
-    <div class="controls">
-      <button id="themeToggle" class="card" style="padding:8px 10px; border-radius:10px;">Toggle Theme</button>
-    </div>
-  </header>
-
-  <main class="container">
-    <div class="card">
-      <div class="section-title">Select disease & year</div>
-      <div class="controls-panel" style="gap:12px;">
-        <div>
+    <div>
           <label for="diseaseSelect">Disease</label>
           <select id="diseaseSelect" aria-label="disease">
             <option value="HIV">HIV</option>
@@ -32,21 +23,26 @@
             <option value="Malaria">Malaria</option>
             <option value="Dengue">Dengue</option>
           </select>
-        </div>
-
-        <div>
+    </div>
+    
+    <div>
           <label for="yearInput">Year</label>
           <select id="yearInput"></select>
-        </div>
+    </div>
 
-        <div style="display:flex; gap:10px;">
+    <div style="display:flex; gap:10px;">
           <button id="viewMap">Open Map</button>
           <button id="openState" style="background:#19a37a;">Open Example State</button>
-        </div>
-
-        <div class="note">Data files must be in repo root. Format: <code>Year | State | Cases</code></div>
-      </div>
     </div>
+    
+    <div class="controls">
+      
+      <button id="themeToggle" class="card" style="padding:8px 10px; border-radius:10px;">Toggle Theme</button>
+    </div>
+  </header>
+
+  <main>
+    
   </main>
 
   <script src="script.js"></script>
