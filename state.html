@@ -11,13 +11,16 @@
   <header class="header">
     <div class="brand">
       <div class="logo"></div>
-      <div>
+      <div class="title">
         <h1 id="stateTitle">State Analytics</h1>
-        <div style="font-size:12px; color:var(--muted)">Time series & distributions</div>
+        <small>Time series & distributions</small>
       </div>
     </div>
-    <div class="controls">
-      <a href="map.html" class="card" style="padding:8px 10px; border-radius:10px;">← Back to Map</a>
+
+    <div class="header-controls">
+      <button id="themeToggleState" style="background:transparent; border:1px solid rgba(0,0,0,0.06); padding:8px 10px; border-radius:8px;">🌙</button>
+      <a class="card" style="padding:8px 10px; border-radius:8px;" href="map.html">← Back to Map</a>
+      <a class="card" style="padding:8px 10px; border-radius:8px;" href="index.html">Home</a>
     </div>
   </header>
 
@@ -26,20 +29,19 @@
       <div>
         <div class="card">
           <div class="section-title" id="titleLeft">State Map</div>
-          <div id="stateMap" style="height:420px; border-radius:10px;"></div>
+          <div id="stateMap"></div>
           <div id="stateSummary" style="margin-top:10px; font-weight:700"></div>
         </div>
 
-        <div class="card chart-card" style="margin-top:16px;">
-          <div class="section-title">Line Plot — Trend over time</div>
+        <div class="card" style="margin-top:16px;">
+          <div class="chart-title">Line Plot — Trend over time</div>
           <canvas id="lineChart" class="chart-canvas"></canvas>
         </div>
 
-        <div class="card chart-card" style="margin-top:16px;">
-          <div class="section-title">Scatter Plot — Cases vs Year</div>
-          <canvas id="scatterChart" class="small-chart" style="height:300px"></canvas>
+        <div class="card" style="margin-top:16px;">
+          <div class="chart-title">Scatter Plot — Cases vs Year</div>
+          <canvas id="scatterChart" class="chart-small chart-canvas"></canvas>
         </div>
-
       </div>
 
       <aside>
@@ -55,9 +57,8 @@
 
         <div class="card" style="margin-top:16px;">
           <div class="section-title">Box Plot — spread & outliers</div>
-          <canvas id="boxCanvas" style="height:160px"></canvas>
+          <canvas id="boxChart" style="height:220px"></canvas>
         </div>
-
       </aside>
     </div>
 
@@ -69,8 +70,23 @@
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-box-and-violin-plot@3.0.0/dist/chartjs-chart-box-and-violin-plot.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <script src="state.js"></script>
+  <script>
+    // theme toggle state button
+    const tbtn = document.getElementById('themeToggleState');
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    tbtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    tbtn.addEventListener('click', () => {
+      const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      tbtn.textContent = t === 'dark' ? '☀️' : '🌙';
+    });
+  </script>
 </body>
 </html>
 
