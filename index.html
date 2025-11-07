@@ -1,62 +1,49 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Disease Spread Dashboard - USA</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <meta charset="utf-8" />
+  <title>Disease Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-  <header class="dashboard-header">
-    <div class="logo-text">USA Disease Dashboard</div>
-    <button id="theme-toggle" class="theme-toggle">🌙</button>
-
-    <div class="header-controls">
-      <label for="disease-select" class="filter-title">Disease Data:</label>
-      <select id="disease-select" class="filter-dropdown">
-        <option value="">-- Select Disease --</option>
-        <option value="TB_data.xlsx">Tuberculosis</option>
-        <option value="HIV_data.xlsx">HIV</option>
-        <option value="Malaria_data.xlsx">Malaria</option>
-        <option value="Dengue_data.xlsx">Dengue</option>
-      </select>
-
-      <label for="year-select" class="filter-title">Select Year:</label>
-      <select id="year-select" class="filter-dropdown" disabled>
-        <option value="">-- Select Year --</option>
-      </select>
-
-      <button id="search-btn" class="search-button" disabled>Search</button>
-      <button id="theme-toggle" class="theme-toggle">🌙</button>
+  <header class="header">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1>Public Health Dashboard</h1>
+        <div style="font-size:12px; color:var(--muted)">Interactive maps & state reports</div>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="themeToggle" class="card" style="padding:8px 10px; border-radius:10px;">Toggle Theme</button>
     </div>
   </header>
 
-  <main class="dashboard-main-content">
-    <p>Select a disease and year from the top bar to view results.</p>
+  <main class="container">
+    <div class="card">
+      <div class="section-title">Select dataset & year</div>
+
+      <div class="controls-panel">
+        <select id="diseaseSelect" aria-label="disease dataset">
+          <option value="HIV_data.xlsx">HIV_data.xlsx</option>
+          <option value="TB_data.xlsx">TB_data.xlsx</option>
+          <option value="Malaria_data.xlsx">Malaria_data.xlsx</option>
+          <option value="Dengue_data.xlsx">Dengue_data.xlsx</option>
+        </select>
+
+        <input id="yearInput" type="number" min="1900" max="2100" value="2019" aria-label="year" />
+        <button id="viewMap">Open Map</button>
+        <button id="openState" style="background:#19a37a;">Open Example State</button>
+      </div>
+
+      <div class="note">Place the selected Excel files in the repo root (e.g. HIV_data.xlsx). Format: <code>Year | State | Cases</code>.</div>
+    </div>
   </main>
 
   <script src="script.js"></script>
-
-  <!-- Theme Toggle Script -->
-  <script>
-    const toggleButton = document.getElementById("theme-toggle");
-    const currentTheme = localStorage.getItem("theme") || "light";
-    document.documentElement.setAttribute("data-theme", currentTheme);
-    toggleButton.textContent = currentTheme === "dark" ? "☀️" : "🌙";
-
-    toggleButton.addEventListener("click", () => {
-      const newTheme =
-        document.documentElement.getAttribute("data-theme") === "dark"
-          ? "light"
-          : "dark";
-      document.documentElement.setAttribute("data-theme", newTheme);
-      localStorage.setItem("theme", newTheme);
-      toggleButton.textContent = newTheme === "dark" ? "☀️" : "🌙";
-    });
-  </script>
 </body>
 </html>
+
 
 
