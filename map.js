@@ -157,23 +157,7 @@ async function drawChoropleth(geo,stateValues,minV,maxV){
 // safe destroy chart
 function safeDestroy(c){ try { if (c && typeof c.destroy === 'function') c.destroy(); } catch(e){} }
 
-// draw bar chart
-function drawBar(stateValues, year, minV, maxV){
-  const ctx = document.getElementById('casesBar').getContext('2d');
-  const labels = Object.keys(stateValues);
-  const data = Object.values(stateValues);
-  const bg = data.map(v=>colorRamp(v,minV,maxV));
-  safeDestroy(barChart);
-  const sugg = roundUpNice(Math.max(...data || [0]) * 1.08 || 10);
-  barChart = new Chart(ctx, {
-    type:'bar',
-    data:{ labels, datasets:[{ label:`Cases (${year})`, data, backgroundColor:bg, maxBarThickness:48 }]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ title: items => items[0].label, label: it => `${labels[it.dataIndex]} — ${it.raw.toLocaleString()} cases` } } },
-      scales:{ x:{ ticks:{ maxRotation:45, autoSkip:true, maxTicksLimit:14 }, grid:{ display:false } }, y:{ beginAtZero:true, suggestedMax:sugg, ticks:{ callback:formatTick } } }
-    }
-  });
-}
+
 
 // draw USA aggregate trend line
 function drawLine(rows){
@@ -190,18 +174,119 @@ function drawLine(rows){
   });
 }
 
-// histogram
-function drawHist(values){
-  safeDestroy(histChart);
-  const ctx = document.getElementById('casesHist').getContext('2d');
-  const buckets = Math.min(10, Math.max(4, Math.round(Math.sqrt(values.length||1))));
-  const minV = Math.min(...values||[0]), maxV = Math.max(...values||[0]);
-  const size = (maxV - minV) / (buckets || 1) || 1;
-  const counts = new Array(buckets).fill(0);
-  values.forEach(v => { const idx = Math.min(buckets-1, Math.floor((v-minV)/size)); counts[idx] += 1; });
-  const labels = new Array(buckets).fill(0).map((_,i)=>`${Math.round(minV+i*size)}–${Math.round(minV+(i+1)*size)}`);
-  histChart = new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label:'Count', data:counts, backgroundColor:'rgba(79,70,229,0.75)', maxBarThickness:40 }]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{ tooltip:{ callbacks:{ label: it => `${it.raw} states` } } }, scales:{ y:{ beginAtZero:true } } }});
+/* map.js replacement: improved drawBar & drawHist */
+
+function niceSuggestedMax(arr) {
+  const maxVal = Math.max(...(arr||[0]));
+  if (!isFinite(maxVal) || maxVal <= 0) return 10;
+  // choose a slightly larger round number (1.15x then round)
+  const raw = maxVal * 1.15;
+  const p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const nice = Math.ceil(raw / p) * p;
+  return nice;
 }
+
+function drawBar(stateValues, year, minV, maxV){
+  const ctxEl = document.getElementById('casesBar');
+  if (!ctxEl) return;
+  const ctx = ctxEl.getContext('2d');
+  const labels = Object.keys(stateValues);
+  const data = Object.values(stateValues);
+  const bg = data.map(v => colorRamp(v, minV, maxV));
+
+  safeDestroyChart(barChart);
+  const suggestedMax = niceSuggestedMax(data);
+
+  barChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: `Cases (${year})`, data, backgroundColor: bg, maxBarThickness: 44, borderWidth:1, borderColor:'rgba(255,255,255,0.12)' }]},
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => items && items.length ? items[0].label : '',
+            label: (ctx) => {
+              const idx = ctx.dataIndex;
+              const lab = labels[idx];
+              const val = ctx.raw;
+              return `${lab} — ${val.toLocaleString()} cases`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks:{ maxRotation:45, autoSkip:true, maxTicksLimit:14 }, grid:{ display:false } },
+        y: { beginAtZero:true, suggestedMax: suggestedMax, ticks:{ callback: val => formatTick(val) } }
+      }
+    }
+  });
+}
+
+function drawHist(values) {
+  const ctxEl = document.getElementById('casesHist');
+  if (!ctxEl) return;
+  const ctx = ctxEl.getContext('2d');
+
+  // sensible bins: Freedman–Diaconis-ish if enough points, otherwise sqrt rule
+  const n = values.length || 1;
+  const iqr = (() => {
+    if (n < 4) return 0;
+    const s = values.slice().sort((a,b)=>a-b);
+    const q1 = s[Math.floor((s.length-1)*0.25)];
+    const q3 = s[Math.floor((s.length-1)*0.75)];
+    return (q3 - q1) || 0;
+  })();
+  let bins;
+  if (iqr > 0) {
+    const h = 2 * iqr / Math.cbrt(n); // Freedman–Diaconis bin width
+    const range = Math.max(...values) - Math.min(...values) || 1;
+    bins = Math.max(4, Math.min(12, Math.round(range / h) || Math.round(Math.sqrt(n))));
+  } else {
+    bins = Math.max(4, Math.min(12, Math.round(Math.sqrt(n))));
+  }
+
+  // compute histogram counts
+  const minV = Math.min(...values);
+  const maxV = Math.max(...values);
+  const width = (maxV - minV) / (bins || 1) || 1;
+  const counts = new Array(bins).fill(0);
+  values.forEach(v => {
+    const idx = Math.min(bins - 1, Math.floor((v - minV) / width));
+    counts[idx] += 1;
+  });
+  const labels = new Array(bins).fill(0).map((_,i) => {
+    const a = Math.round(minV + i*width);
+    const b = Math.round(minV + (i+1)*width);
+    return `${a}–${b}`;
+  });
+
+  safeDestroyChart(histChart);
+  histChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Count', data: counts, backgroundColor: 'rgba(99,102,241,0.9)', maxBarThickness: 40 }]},
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => items && items.length ? items[0].label : '',
+            label: (ctx) => `${ctx.raw} states`
+          }
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: v => v } },
+        x: { ticks:{ autoSkip:true, maxRotation:30 } }
+      }
+    }
+  });
+}
+
 
 // matrix heatmap (matrix plugin) with fallback handled in drawMatrixHeatmap function
 let matrixChartRef = null;
