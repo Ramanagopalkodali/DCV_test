@@ -1,4 +1,3 @@
-/* style.css - final polished dashboard (light + dark) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Poppins:wght@600;700&display=swap');
 
 :root{
@@ -36,11 +35,43 @@ a{color:var(--accent); text-decoration:none}
   gap:12px; padding:10px var(--page-pad); background:rgba(255,255,255,0.85);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid rgba(0,0,0,0.04);
+  /* ensure nothing inside can accidentally enlarge the header */
+  overflow: hidden;
 }
 [data-theme="dark"] .header{ background:rgba(255,255,255,0.02); border-bottom:1px solid rgba(255,255,255,0.03); }
 
+/* brand (logo + text) */
 .brand{display:flex; gap:12px; align-items:center}
-.brand .logo{width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:0 8px 26px rgba(20,102,242,0.12)}
+
+/* logo container — keeps visual gradient when no image provided
+   and acts as a strict bounding box when an <img> is used */
+.brand .logo{
+  width:44px;
+  height:44px;
+  min-width:44px;            /* prevents it from shrinking too small */
+  min-height:44px;
+  border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  box-shadow:0 8px 26px rgba(20,102,242,0.12);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;           /* important: keeps child image from overflowing */
+}
+
+/* If you insert an <img> inside .logo, this constrains it so it
+   doesn't grow the header or distort aspect ratio */
+.brand .logo img{
+  display:block;
+  height:100%;               /* fill the .logo box's height */
+  max-height:100%;
+  width:auto;                /* preserve aspect ratio */
+  object-fit:contain;        /* avoid stretching */
+  user-select:none;
+  -webkit-user-drag:none;
+}
+
+/* brand text */
 .brand .title{display:flex; flex-direction:column}
 .brand h1{margin:0; font-size:18px; font-family:Poppins, Inter; font-weight:700}
 .brand small{color:var(--muted)}
@@ -86,5 +117,14 @@ a{color:var(--accent); text-decoration:none}
 #casesBar, #barChart { height:360px !important; }
 #casesHist, #histChart { height:280px !important; }
 #matrixHeatmap { height:420px !important; }
+
+/* small screens: make header and logo slightly smaller */
+@media (max-width: 600px) {
+  .header { padding:8px 12px; }
+  .brand .logo { width:36px; height:36px; min-width:36px; min-height:36px; border-radius:8px; }
+  .brand h1 { font-size:16px; }
+  .brand small { display:none; }
+}
+
 
 
