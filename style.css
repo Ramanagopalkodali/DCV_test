@@ -80,4 +80,10 @@ a{color:var(--accent); text-decoration:none}
   overflow: hidden;
 }
 
+/* Chart canvas heights to avoid extremely tall bars */
+.chart-canvas { width:100% !important; height:360px !important; display:block; }
+.chart-small { height:260px !important; }
+#casesBar, #barChart { height:360px !important; }
+#casesHist, #histChart { height:280px !important; }
+#matrixHeatmap { height:420px !important; }
 
