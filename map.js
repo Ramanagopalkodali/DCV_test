@@ -1,261 +1,351 @@
-/* map.js - choropleth + national charts with improved layout */
-const params = new URLSearchParams(window.location.search);
-let fileParam = params.get('disease') || 'HIV_data.xlsx';
-let yearParam = params.get('year') || null;
+/* map.js - updated: sessionStorage restore, header controls, CSV download, formatting ticks */
+const urlParams = new URLSearchParams(window.location.search);
+let initialFile = urlParams.get('disease') || sessionStorage.getItem('lastDataset') || 'HIV_data.xlsx';
+let initialYear = urlParams.get('year') || sessionStorage.getItem('lastYear') || (new Date()).getFullYear() - 1;
 
-// UI elements
-const dsSelect = document.getElementById('dsSelect');
-const yearInput = document.getElementById('yearSelect');
-const reloadBtn = document.getElementById('reloadBtn');
-const downloadCSVBtn = document.getElementById('downloadCSV');
-const totalCasesEl = document.getElementById('totalCases');
-const selectedInfoEl = document.getElementById('selectedInfo');
-const heatmapWrap = document.getElementById('heatmapWrap');
-const legendWrap = document.getElementById('legendWrap');
+// Header controls
+const dsSelectHeader = document.getElementById('dsSelectHeader');
+const yearSelectHeader = document.getElementById('yearSelectHeader');
+const loadHeader = document.getElementById('loadHeader');
+const downloadCSVHeader = document.getElementById('downloadCSVHeader');
+const themeToggleHeader = document.getElementById('themeToggleHeader');
 
-// example dataset list (update as needed)
-const datasets = [
-  'HIV_data.xlsx',
-  'TB_data.xlsx',
-  'Malaria_data.xlsx',
-  'Dengue_data.xlsx'
-];
-datasets.forEach(d => {
-  const o = document.createElement('option'); o.value = d; o.textContent = d;
-  dsSelect.appendChild(o);
-});
-dsSelect.value = fileParam;
-yearInput.value = yearParam || 2019;
+dsSelectHeader.value = initialFile;
+yearSelectHeader.value = initialYear;
 
-reloadBtn.addEventListener('click', () => {
-  fileParam = dsSelect.value; yearParam = Number(yearInput.value);
+// theme toggle (persist)
+const setTheme = (t) => { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('theme', t); themeToggleHeader.textContent = t === 'dark' ? '☀️' : '🌙'; }
+const savedTheme = localStorage.getItem('theme') || 'light';
+setTheme(savedTheme);
+themeToggleHeader.addEventListener('click', () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark') );
+
+// expose header download button to call export (map.js defines function later)
+downloadCSVHeader.addEventListener('click', () => { if (typeof exportVisibleCSV === 'function') exportVisibleCSV(); else alert('No data yet'); });
+loadHeader.addEventListener('click', () => {
+  initialFile = dsSelectHeader.value;
+  initialYear = yearSelectHeader.value;
+  sessionStorage.setItem('lastDataset', initialFile);
+  sessionStorage.setItem('lastYear', initialYear);
   loadAll();
 });
-downloadCSVBtn.addEventListener('click', exportVisibleCSV);
 
-let geoDataGlobal = null;
-
-async function loadGeo() {
-  if (geoDataGlobal) return geoDataGlobal;
-  const res = await fetch('usa_states.geojson');
-  geoDataGlobal = await res.json();
-  return geoDataGlobal;
+// helper: SI formatting for ticks
+function formatTick(val) {
+  if (Math.abs(val) >= 1e6) return (val / 1e6).toFixed(1).replace(/\.0$/,'') + 'M';
+  if (Math.abs(val) >= 1e3) return (val / 1e3).toFixed(1).replace(/\.0$/,'') + 'k';
+  return ''+val;
 }
 
-function getColorRamp(value, min, max) {
-  if (value == null) return '#efefef';
-  const ratio = (value - min) / (max - min || 1);
-  const r = Math.round(255 * ratio);
-  const g = Math.round(200 - 150 * ratio);
-  const b = Math.round(50 + 100 * (1 - ratio));
+// load geo (cached)
+let geoCache = null;
+async function loadGeo() {
+  if (geoCache) return geoCache;
+  const r = await fetch('usa_states.geojson'); geoCache = await r.json(); return geoCache;
+}
+
+// detect JSON vs XLSX
+function isJSON(name){ return name.toLowerCase().endsWith('.json') || name.toLowerCase().endsWith('.csv'); }
+async function loadRows(name) {
+  if (isJSON(name)) {
+    if (name.toLowerCase().endsWith('.json')) return await (await fetch(name)).json();
+    // CSV
+    const txt = await (await fetch(name)).text();
+    const lines = txt.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    return lines.slice(1).map(l => {
+      const cols = l.split(',');
+      const obj = {}; headers.forEach((h,i)=>obj[h]=cols[i]); return obj;
+    });
+  } else {
+    const buf = await (await fetch(name)).arrayBuffer();
+    const wb = XLSX.read(buf);
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(sheet);
+  }
+}
+
+// color ramp
+function colorRamp(v, min, max) {
+  if (v == null) return '#efefef';
+  const ratio = (v - min) / (max - min || 1);
+  const r = Math.round(220 * ratio + 30 * (1 - ratio));
+  const g = Math.round(230 - 180 * ratio);
+  const b = Math.round(80 + 120 * (1 - ratio));
   return `rgb(${r},${g},${b})`;
 }
 
-async function loadAll() {
-  const ds = fileParam;
-  const year = Number(yearParam);
+/* Chart instances (global so we can update/destroy) */
+let barChart = null, lineChart = null, histChart = null, matrixChart = null;
+let leafletMap = null;
 
-  selectedInfoEl.textContent = `Dataset: ${ds} · Year: ${year}`;
-  totalCasesEl.textContent = 'Loading...';
-
-  const [geo, excelBuf] = await Promise.all([ loadGeo(), fetch(ds).then(r => r.arrayBuffer()) ]);
-  const wb = XLSX.read(excelBuf);
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(sheet);
-
-  // pivot and aggregates
-  const years = Array.from(new Set(rows.map(r => Number(r.Year)).filter(Boolean))).sort((a,b)=>a-b);
-  const states = Array.from(new Set(rows.map(r => String(r.State).trim()))).sort();
-
-  // pivot: state->year->cases
-  const pivot = {};
-  states.forEach(s => pivot[s] = {});
-  rows.forEach(r => {
-    const s = String(r.State).trim();
-    const y = Number(r.Year);
-    const c = Number(r.Cases) || 0;
-    pivot[s][y] = (pivot[s][y] || 0) + c;
-  });
-
-  // compute per-state for selected year
-  const stateValues = {};
-  states.forEach(s => stateValues[s] = pivot[s][year] || 0);
-
-  const valuesArr = Object.values(stateValues);
-  const minV = Math.min(...valuesArr);
-  const maxV = Math.max(...valuesArr);
-
-  // total USA
-  const totalUSA = valuesArr.reduce((a,b)=>a+(b||0),0);
-  totalCasesEl.textContent = `Total USA Cases (${year}): ${totalUSA.toLocaleString()}`;
-
-  // draw map
-  drawChoropleth(geo, stateValues, minV, maxV);
-
-  // charts
-  drawBar(stateValues, year, minV, maxV);
-  drawLine(rows);
-  drawHist(valuesArr);
-  renderHeatmap(pivot, years, states, minV, maxV);
-
-  // legend
-  renderLegend(minV, maxV);
+// restore map state from sessionStorage if present
+function restoreMapState() {
+  const s = sessionStorage.getItem('mapState');
+  if (!s) return null;
+  try { return JSON.parse(s); } catch(e){ return null; }
 }
 
-let leafletMap = null;
-function drawChoropleth(geo, stateValues, minV, maxV) {
+// save map state before navigation
+function saveMapState() {
+  if (!leafletMap) return;
+  const c = leafletMap.getCenter();
+  const zoom = leafletMap.getZoom();
+  const state = { center: [c.lat, c.lng], zoom, dataset: initialFile, year: initialYear };
+  sessionStorage.setItem('mapState', JSON.stringify(state));
+}
+
+// draw choropleth and restore view if available
+async function drawChoropleth(geo, stateValues, minV, maxV) {
   if (!leafletMap) {
     leafletMap = L.map('map', { scrollWheelZoom:false }).setView([37.8, -96], 4);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(leafletMap);
+  } else {
+    // remove existing geojson layers
+    leafletMap.eachLayer(l => { if (l && l instanceof L.GeoJSON) leafletMap.removeLayer(l); });
   }
-  // clear previous layers
-  leafletMap.eachLayer(layer => {
-    if (layer && layer.options && !layer.options.attribution) leafletMap.removeLayer(layer);
-  });
-  // re-add tiles
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(leafletMap);
 
-  function style(feature) {
-    const name = feature.properties.NAME;
+  function style(f) {
+    const name = f.properties.NAME;
     const v = stateValues[name];
-    return {
-      fillColor: getColorRamp(v, minV, maxV),
-      weight: 1,
-      color: '#ffffff',
-      fillOpacity: 0.92
-    };
+    return { fillColor: colorRamp(v, minV, maxV), weight:1, color:'#fff', fillOpacity:0.92 };
   }
-
-  function onEach(feature, layer) {
-    const name = feature.properties.NAME;
+  function onEach(f, layer) {
+    const name = f.properties.NAME;
     const v = stateValues[name] != null ? stateValues[name] : 'No data';
-    layer.bindTooltip(`<strong>${name}</strong><br/>Cases: ${v}`, { direction: 'auto' });
+    layer.bindTooltip(`<strong>${name}</strong><br/>Cases: ${v}`, { direction:'auto' });
     layer.on('click', () => {
-      window.location.href = `state.html?state=${encodeURIComponent(name)}&disease=${encodeURIComponent(fileParam)}&year=${yearInput.value}`;
+      // save map state before navigation
+      saveMapState();
+      // navigate with query params
+      window.location.href = `state.html?state=${encodeURIComponent(name)}&disease=${encodeURIComponent(initialFile)}&year=${encodeURIComponent(initialYear)}`;
     });
   }
-
   L.geoJson(geo, { style, onEachFeature: onEach }).addTo(leafletMap);
+
+  // restore previous view if dataset/year match
+  const st = restoreMapState();
+  if (st && st.dataset === initialFile && String(st.year) === String(initialYear)) {
+    leafletMap.setView(st.center, st.zoom);
+  }
 }
 
-let barChart = null;
+// utility: nice round up for suggestedMax
+function roundUpNice(n) {
+  if (n <= 10) return Math.ceil(n);
+  const p = Math.pow(10, Math.floor(Math.log10(n)));
+  return Math.ceil(n / p) * p;
+}
+
+/* Draw charts with formatted ticks */
 function drawBar(stateValues, year, minV, maxV) {
   const ctx = document.getElementById('casesBar').getContext('2d');
   const labels = Object.keys(stateValues);
   const data = Object.values(stateValues);
-  const bg = data.map(v => getColorRamp(v, minV, maxV));
+  const bg = data.map(v => colorRamp(v, minV, maxV));
+
+  const suggestedMax = roundUpNice(Math.max(...data) * 1.08);
 
   if (barChart) barChart.destroy();
   barChart = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets:[{ label:`Cases (${year})`, data, backgroundColor:bg }]},
+    data: { labels, datasets: [{ label:`Cases (${year})`, data, backgroundColor: bg, maxBarThickness: 48 }]},
     options: {
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:true, position:'top' }},
+      plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: (ctx) => `Cases: ${ctx.raw.toLocaleString()}` } } },
       scales: {
-        x: { ticks:{ maxRotation:45, minRotation:30, autoSkip:true, maxTicksLimit:12 }, grid:{ display:false }},
-        y: { beginAtZero:true, title:{ display:true, text:'Cases' } }
+        x: { ticks:{ maxRotation:45, minRotation:30, autoSkip:true, maxTicksLimit:14 }, grid:{ display:false } },
+        y: { beginAtZero:true, suggestedMax, ticks:{ callback: val => formatTick(val) }, title:{ display:false } }
       }
     }
   });
 }
 
-let lineChart = null;
 function drawLine(rows) {
   const yearAgg = {};
-  rows.forEach(r => { const y=Number(r.Year); if (!y) return; yearAgg[y] = (yearAgg[y]||0) + (Number(r.Cases)||0) });
+  rows.forEach(r => { const y = Number(r.Year); if (!y) return; yearAgg[y] = (yearAgg[y] || 0) + (Number(r.Cases) || 0); });
   const yrs = Object.keys(yearAgg).map(Number).sort((a,b)=>a-b);
   const vals = yrs.map(y => yearAgg[y]);
   const ctx = document.getElementById('casesLine').getContext('2d');
+  const suggestedMax = roundUpNice(Math.max(...vals) * 1.08);
   if (lineChart) lineChart.destroy();
   lineChart = new Chart(ctx, {
     type: 'line',
-    data: { labels: yrs, datasets: [{ label:'USA total', data: vals, borderWidth:2, fill:true, tension:0.3 }]},
+    data: { labels: yrs, datasets: [{ label:'USA total', data: vals, borderColor:'#0f6ef6', backgroundColor:'rgba(15,110,246,0.08)', fill:true, tension:0.3 }]},
     options: {
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:false }},
-      scales:{ y:{ beginAtZero:true }, x:{ title:{ display:true, text:'Year' } } }
+      scales: { y:{ beginAtZero:true, suggestedMax, ticks:{ callback: v => formatTick(v) } }, x:{ title:{ display:true, text:'Year' } } }
     }
   });
 }
 
-let histChart = null;
 function drawHist(values) {
-  const buckets = 7;
-  const minV = Math.min(...values); const maxV = Math.max(...values);
-  const size = (maxV-minV)/(buckets||1) || 1;
+  const buckets = Math.min(10, Math.max(4, Math.round(Math.sqrt(values.length))));
+  const minV = Math.min(...values), maxV = Math.max(...values);
+  const size = (maxV - minV) / (buckets || 1) || 1;
   const counts = new Array(buckets).fill(0);
-  values.forEach(v => {
-    const idx = Math.min(buckets-1, Math.floor((v-minV)/size));
-    counts[idx] += 1;
-  });
+  values.forEach(v => { const idx = Math.min(buckets-1, Math.floor((v-minV)/size)); counts[idx] += 1; });
   const labels = new Array(buckets).fill(0).map((_,i)=>`${Math.round(minV+i*size)}–${Math.round(minV+(i+1)*size)}`);
   const ctx = document.getElementById('casesHist').getContext('2d');
   if (histChart) histChart.destroy();
   histChart = new Chart(ctx, {
     type:'bar',
-    data:{ labels, datasets:[{ label:'States', data:counts, backgroundColor:'rgba(79,70,229,0.75)'}] },
-    options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+    data: { labels, datasets: [{ label:'States', data: counts, backgroundColor:'rgba(79,70,229,0.75)', maxBarThickness: 40 }] },
+    options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, ticks:{ callback: v => v } } } }
   });
 }
 
-function renderHeatmap(pivot, years, states, minV, maxV) {
-  // build table quickly
-  let html = `<table class="heatmap-table"><thead><tr><th>State</th>`;
-  years.forEach(y => html += `<th>${y}</th>`);
-  html += `</tr></thead><tbody>`;
-  states.forEach(s => {
-    html += `<tr><td style="text-align:left; font-weight:600;">${s}</td>`;
-    years.forEach(y => {
-      const v = pivot[s][y] || 0;
-      const bg = getColorRamp(v, minV, maxV);
-      html += `<td data-s="${s}" data-y="${y}" style="background:${bg}; cursor:pointer;">${v}</td>`;
+/* Matrix heatmap */
+let matrixCanvas = document.getElementById('matrixHeatmap');
+function drawMatrixHeatmap(pivot, years, states, minV, maxV) {
+  // build data array with x = year index, y = state index, v = value
+  const xLabels = years.map(String);
+  const yLabels = states.slice();
+  const data = [];
+  years.forEach((yr, xi) => {
+    states.forEach((st, yi) => {
+      const v = pivot[st][yr] || 0;
+      data.push({ x: xi, y: yi, v });
     });
-    html += `</tr>`;
   });
-  html += `</tbody></table>`;
-  heatmapWrap.innerHTML = html;
 
-  // click handler
-  heatmapWrap.querySelectorAll('td[data-s]').forEach(td => {
-    td.addEventListener('click', e => {
-      const s = td.dataset.s; const y = td.dataset.y;
-      window.location.href = `state.html?state=${encodeURIComponent(s)}&disease=${encodeURIComponent(fileParam)}&year=${y}`;
-    });
+  if (matrixChart) matrixChart.destroy();
+  const ctx = matrixCanvas.getContext('2d');
+
+  matrixChart = new Chart(ctx, {
+    type: 'matrix',
+    data: {
+      datasets: [{
+        label: 'State×Year',
+        data,
+        width: ({chart}) => (chart.chartArea.width / xLabels.length) - 1,
+        height: ({chart}) => (chart.chartArea.height / yLabels.length) - 1,
+        backgroundColor: ctx => colorRamp(ctx.dataset.data[ctx.dataIndex].v, minV, maxV),
+      }]
+    },
+    options: {
+      maintainAspectRatio:false,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            title: items => {
+              const it = items[0];
+              const dp = it.dataset.data[it.dataIndex];
+              return `${yLabels[dp.y]} — ${xLabels[dp.x]}`;
+            },
+            label: item => `Cases: ${item.dataset.data[item.dataIndex].v.toLocaleString()}`
+          }
+        }
+      },
+      scales: {
+        x: { type:'category', labels: xLabels, position:'bottom', grid:{ display:false }, ticks:{ maxRotation:45, minRotation:30, autoSkip:true, maxTicksLimit:10 } },
+        y: { type:'category', labels: yLabels, grid:{ display:false }, ticks:{ autoSkip:true, maxTicksLimit:20 } }
+      },
+      onClick: (evt, elems) => {
+        if (!elems.length) return;
+        const el = elems[0];
+        const dp = matrixChart.data.datasets[el.datasetIndex].data[el.index];
+        const year = xLabels[dp.x];
+        const state = yLabels[dp.y];
+        saveMapState();
+        window.location.href = `state.html?state=${encodeURIComponent(state)}&disease=${encodeURIComponent(initialFile)}&year=${year}`;
+      }
+    }
   });
 }
 
+/* Small legend builder */
 function renderLegend(minV, maxV) {
+  const wrap = document.getElementById('legendWrap');
+  let html = '<div class="info legend"><strong>Cases</strong><div style="display:flex; gap:8px; margin-top:8px; align-items:center;">';
   const steps = 5;
-  let html = `<div class="info legend"><strong>Cases</strong><div style="margin-top:8px; display:flex; gap:8px; align-items:center;">`;
   for (let i=0;i<=steps;i++){
-    const v = Math.round(minV + (i/(steps||1))*(maxV-minV));
-    html += `<span style="display:flex; gap:8px; align-items:center;"><span style="width:20px;height:12px;background:${getColorRamp(v,minV,maxV)};display:inline-block;border-radius:3px;"></span><small style="color:var(--muted)">${v}</small></span>`;
+    const v = Math.round(minV + (i/steps)*(maxV-minV));
+    html += `<span style="display:flex; gap:8px; align-items:center;"><span style="width:20px;height:12px;background:${colorRamp(v,minV,maxV)};display:inline-block;border-radius:3px;"></span><small style="color:var(--muted)">${formatTick(v)}</small></span>`;
   }
-  html += `</div></div>`;
-  legendWrap.innerHTML = html;
+  html += '</div></div>';
+  wrap.innerHTML = html;
 }
 
+/* CSV export for matrix (uses matrixChart data) */
 function exportVisibleCSV() {
-  // export current pivot (heatmap table) to CSV
-  const rows = heatmapWrap.querySelectorAll('table tr');
-  if (!rows.length) return alert('No data to export');
-  const arr = [];
-  rows.forEach(tr => {
-    const cols = Array.from(tr.querySelectorAll('th,td')).map(cell => `"${String(cell.textContent).replace(/"/g,'""')}"`);
-    arr.push(cols.join(','));
+  if (!matrixChart) { alert('No heatmap loaded yet'); return; }
+  const xLabels = matrixChart.options.scales.x.labels;
+  const yLabels = matrixChart.options.scales.y.labels;
+  const data = matrixChart.data.datasets[0].data;
+  // build grid
+  const grid = {};
+  data.forEach(d => {
+    const yr = xLabels[d.x]; const st = yLabels[d.y];
+    grid[st] = grid[st] || {}; grid[st][yr] = d.v;
   });
-  const csv = arr.join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const header = ['State', ...xLabels];
+  const rows = [header.join(',')];
+  yLabels.forEach(st => {
+    const row = [ `"${st.replace(/"/g,'""')}"` ];
+    xLabels.forEach(yr => row.push( String(grid[st] && grid[st][yr] ? grid[st][yr] : 0) ));
+    rows.push(row.join(','));
+  });
+  const csv = rows.join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'heatmap_export.csv'; a.click();
-  URL.revokeObjectURL(url);
+  const a = document.createElement('a'); a.href=url; a.download = 'heatmap_export.csv'; a.click(); URL.revokeObjectURL(url);
 }
 
-// init
-loadAll().catch(err => {
-  console.error(err);
-  selectedInfoEl.textContent = 'Error loading dataset — check console.';
-});
+/* MAIN load function */
+async function loadAll() {
+  // use header controls values
+  initialFile = dsSelectHeader.value || initialFile;
+  initialYear = yearSelectHeader.value || initialYear;
+  sessionStorage.setItem('lastDataset', initialFile);
+  sessionStorage.setItem('lastYear', initialYear);
+
+  document.getElementById('selectedInfo').textContent = `Dataset: ${initialFile} · Year: ${initialYear}`;
+  document.getElementById('totalCases').textContent = 'Loading...';
+
+  try {
+    const [geo, rows] = await Promise.all([ loadGeo(), loadRows(initialFile) ]);
+    // normalize
+    const yrs = Array.from(new Set(rows.map(r=>Number(r.Year)).filter(Boolean))).sort((a,b)=>a-b);
+    const states = Array.from(new Set(rows.map(r=>String(r.State).trim()))).sort();
+    // pivot
+    const pivot = {}; states.forEach(s=>pivot[s]={});
+    rows.forEach(r => { const s = String(r.State).trim(); const y = Number(r.Year); const c = Number(r.Cases)||0; pivot[s][y] = (pivot[s][y]||0) + c; });
+
+    const stateValues = {}; states.forEach(s=>stateValues[s]=pivot[s][initialYear]||0);
+    const vals = Object.values(stateValues);
+    const minV = Math.min(...vals), maxV = Math.max(...vals);
+    const totalUSA = vals.reduce((a,b)=>a+(b||0),0);
+    document.getElementById('totalCases').textContent = `Total USA Cases (${initialYear}): ${totalUSA.toLocaleString()}`;
+
+    // draw map, charts, heatmap
+    drawChoropleth(geo, stateValues, minV, maxV);
+    drawBar(stateValues, initialYear, minV, maxV);
+    drawLine(rows);
+    drawHist(vals);
+    drawMatrixHeatmap(pivot, yrs, states, minV, maxV);
+    renderLegend(minV, maxV);
+
+    // after charts created, ensure they resize properly
+    [barChart, lineChart, histChart, matrixChart].forEach(ch => { if (ch && typeof ch.resize === 'function') ch.resize(); });
+  } catch (err) {
+    console.error(err);
+    document.getElementById('selectedInfo').textContent = 'Failed to load data (see console)';
+  }
+}
+
+// restore header controls from session or query
+(function initFromSession() {
+  const st = restoreMapState();
+  if (st) {
+    if (!dsSelectHeader.value) dsSelectHeader.value = st.dataset;
+    if (!yearSelectHeader.value) yearSelectHeader.value = st.year;
+  }
+})();
+
+// load on open
+loadAll();
+
+// Expose export function to header's CSV download
+window.exportVisibleCSV = exportVisibleCSV;
 
 
