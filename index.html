@@ -12,7 +12,7 @@
       <div class="logo"></div>
       <div>
         <h1>Public Health Dashboard</h1>
-        <div style="font-size:12px; color:var(--muted)">Interactive maps & state reports</div>
+        <p>Interactive maps & state reports</p>
       </div>
     </div>
     <div class="controls">
@@ -22,22 +22,30 @@
 
   <main class="container">
     <div class="card">
-      <div class="section-title">Select dataset & year</div>
+      <div class="section-title">Select disease & year</div>
+      <div class="controls-panel" style="gap:12px;">
+        <div>
+          <label for="diseaseSelect">Disease</label>
+          <select id="diseaseSelect" aria-label="disease">
+            <option value="HIV">HIV</option>
+            <option value="TB">TB</option>
+            <option value="Malaria">Malaria</option>
+            <option value="Dengue">Dengue</option>
+          </select>
+        </div>
 
-      <div class="controls-panel">
-        <select id="diseaseSelect" aria-label="disease dataset">
-          <option value="HIV_data.xlsx">HIV_data.xlsx</option>
-          <option value="TB_data.xlsx">TB_data.xlsx</option>
-          <option value="Malaria_data.xlsx">Malaria_data.xlsx</option>
-          <option value="Dengue_data.xlsx">Dengue_data.xlsx</option>
-        </select>
+        <div>
+          <label for="yearInput">Year</label>
+          <select id="yearInput"></select>
+        </div>
 
-        <input id="yearInput" type="number" min="1900" max="2100" value="2019" aria-label="year" />
-        <button id="viewMap">Open Map</button>
-        <button id="openState" style="background:#19a37a;">Open Example State</button>
+        <div style="display:flex; gap:10px;">
+          <button id="viewMap">Open Map</button>
+          <button id="openState" style="background:#19a37a;">Open Example State</button>
+        </div>
+
+        <div class="note">Data files must be in repo root. Format: <code>Year | State | Cases</code></div>
       </div>
-
-      <div class="note">Place the selected Excel files in the repo root (e.g. HIV_data.xlsx). Format: <code>Year | State | Cases</code>.</div>
     </div>
   </main>
 
