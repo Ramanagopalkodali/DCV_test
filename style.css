@@ -87,8 +87,4 @@ a{color:var(--accent); text-decoration:none}
 #casesHist, #histChart { height:280px !important; }
 #matrixHeatmap { height:420px !important; }
 
-.logo img {
-  height: 40px; /* control logo size here */
-  width: auto;  /* maintains aspect ratio */
-  object-fit: contain; /* keeps it from stretching */
-}
+
