@@ -1,62 +1,78 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>State Details</title>
+  <meta charset="utf-8" />
+  <title>State — Disease Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css">
-
-  <!-- Leaflet & Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-  <header class="dashboard-header">
-    <div class="logo-text">State-Level Disease Analysis</div>
-    <button id="theme-toggle" class="theme-toggle">🌙</button>
-
-    <button id="backBtn" class="search-button" style="background:#4a90e2;">⬅ Back to USA Map</button>
+  <header class="header">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1 id="stateTitle">State Analytics</h1>
+        <div style="font-size:12px; color:var(--muted)">Time series & distributions</div>
+      </div>
+    </div>
+    <div class="controls">
+      <a href="map.html" class="card" style="padding:8px 10px; border-radius:10px;">← Back to Map</a>
+    </div>
   </header>
 
-  <main class="dashboard-main-content">
-    <h2 id="state-title"></h2>
+  <main class="container">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="section-title" id="titleLeft">State Map</div>
+          <div id="stateMap" style="height:420px; border-radius:10px;"></div>
+          <div id="stateSummary" style="margin-top:10px; font-weight:700"></div>
+        </div>
 
-    <!-- State Map -->
-    <div id="state-map" style="height:400px; margin:20px 0; border-radius:8px;"></div>
+        <div class="card chart-card" style="margin-top:16px;">
+          <div class="section-title">Line Plot — Trend over time</div>
+          <canvas id="lineChart" class="chart-canvas"></canvas>
+        </div>
 
-    <!-- Details Table -->
-    <table id="detail-table" class="detail-table"></table>
+        <div class="card chart-card" style="margin-top:16px;">
+          <div class="section-title">Scatter Plot — Cases vs Year</div>
+          <canvas id="scatterChart" class="small-chart" style="height:300px"></canvas>
+        </div>
 
-    <!-- Charts -->
-    <h3 style="text-align:center; margin-top:30px;">Cases Over Time</h3>
-    <canvas id="barChart" height="120"></canvas>
+      </div>
 
-    <h3 style="text-align:center; margin-top:40px;">Trend Line</h3>
-    <canvas id="lineChart" height="120"></canvas>
+      <aside>
+        <div class="card">
+          <div class="section-title">Bar Plot — Yearly counts</div>
+          <canvas id="barChart" style="height:250px"></canvas>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="section-title">Histogram — distribution of yearly counts</div>
+          <canvas id="histChart" style="height:220px"></canvas>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="section-title">Box Plot — spread & outliers</div>
+          <canvas id="boxCanvas" style="height:160px"></canvas>
+        </div>
+
+      </aside>
+    </div>
+
+    <div class="card" style="margin-top:18px;">
+      <div class="section-title">Raw data</div>
+      <table id="rawTable" style="width:100%; border-collapse:collapse;"></table>
+    </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="state.js"></script>
-
-  <script>
-  const toggleButton = document.getElementById("theme-toggle");
-  const currentTheme = localStorage.getItem("theme") || "light";
-  document.documentElement.setAttribute("data-theme", currentTheme);
-  toggleButton.textContent = currentTheme === "dark" ? "☀️" : "🌙";
-
-  toggleButton.addEventListener("click", () => {
-    const newTheme =
-      document.documentElement.getAttribute("data-theme") === "dark"
-        ? "light"
-        : "dark";
-    document.documentElement.setAttribute("data-theme", newTheme);
-    localStorage.setItem("theme", newTheme);
-    toggleButton.textContent = newTheme === "dark" ? "☀️" : "🌙";
-  });
-</script>
-
 </body>
 </html>
+
 
 
