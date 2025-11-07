@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Disease Dashboard</title>
+  <title>Public Health Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css">
 </head>
@@ -12,46 +12,39 @@
       <div class="logo">
         <img src="logo.png" alt="Disease Tracker Portal logo">
       </div>
-      <div class="titles">
-        <h2 id="stateTitle">Map View</h2>
-        <p id="subtitle">Hover a state to see cases — click to open state page</p>
+      <div class="title">
+        <h1>Public Health Dashboard</h1>
+        <small>Interactive maps & state reports</small>
       </div>
     </div>
 
-    <div class="controls-row" role="region" aria-label="header controls">
-      <div class="control-pill">
-        <label for="diseaseSelect" class="pill-label">Disease</label>
-        <select id="diseaseSelect" aria-label="disease">
-          <option value="HIV">HIV</option>
-          <option value="TB">TB</option>
-          <option value="Malaria">Malaria</option>
-          <option value="Dengue">Dengue</option>
-        </select>
-      </div>
+    <div class="header-controls">
+      <label for="diseaseSelect">Disease</label>
+      <select id="diseaseSelect" aria-label="disease">
+        <option value="HIV">HIV</option>
+        <option value="TB">TB</option>
+        <option value="Malaria">Malaria</option>
+        <option value="Dengue">Dengue</option>
+      </select>
 
-      <div class="control-pill">
-        <label for="yearInput" class="pill-label">Year</label>
-        <select id="yearInput" aria-label="year"></select>
-      </div>
+      <label for="yearInput">Year</label>
+      <select id="yearInput"></select>
 
-      <div class="control-pill">
-        <button id="viewMap" class="btn-primary">Open Map</button>
-        <button id="openState" class="btn-accent">Open Example State</button>
-      </div>
+      <button id="viewMap" class="btn-light">Open Map</button>
+      <button id="openState" class="btn-green">Open Example State</button>
 
-      <div style="display:flex; align-items:center; gap:8px">
-        <button id="themeToggle" aria-label="Toggle theme"></button>
-      </div>
+      <button id="themeToggle" aria-label="Toggle Theme" class="theme-btn"></button>
     </div>
   </header>
 
   <main>
-    <!-- your main content goes here -->
+    <!-- Main content -->
   </main>
 
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
