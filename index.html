@@ -10,43 +10,43 @@
   <header class="header">
     <div class="brand">
       <div class="logo">
-      <img src="logo.png" alt="Disease Tracker Portal logo">
-    </div>
-      <div>
-        <h1>Public Health Dashboard</h1>
-        <p>Interactive maps & state reports</p>
+        <img src="logo.png" alt="Disease Tracker Portal logo">
+      </div>
+      <div class="titles">
+        <h2 id="stateTitle">Map View</h2>
+        <p id="subtitle">Hover a state to see cases — click to open state page</p>
       </div>
     </div>
-    <div>
-          <label for="diseaseSelect">Disease</label>
-          <select id="diseaseSelect" aria-label="disease">
-            <option value="HIV">HIV</option>
-            <option value="TB">TB</option>
-            <option value="Malaria">Malaria</option>
-            <option value="Dengue">Dengue</option>
-          </select>
-    </div>
-    
-    <div>
-          <label for="yearInput">Year</label>
-          <select id="yearInput"></select>
-    </div>
 
-    <div style="display:flex; gap:10px;">
-          <button id="viewMap">Open Map</button>
-          <button id="openState" style="background:#19a37a;">Open Example State</button>
-    </div>
-    
-    <div class="controls">
-      <button id="themeToggle" class="card" style="padding:8px 10px; border-radius:10px;">Toggle Theme</button>
+    <div class="controls-row" role="region" aria-label="header controls">
+      <div class="control-pill">
+        <label for="diseaseSelect" class="pill-label">Disease</label>
+        <select id="diseaseSelect" aria-label="disease">
+          <option value="HIV">HIV</option>
+          <option value="TB">TB</option>
+          <option value="Malaria">Malaria</option>
+          <option value="Dengue">Dengue</option>
+        </select>
+      </div>
+
+      <div class="control-pill">
+        <label for="yearInput" class="pill-label">Year</label>
+        <select id="yearInput" aria-label="year"></select>
+      </div>
+
+      <div class="control-pill">
+        <button id="viewMap" class="btn-primary">Open Map</button>
+        <button id="openState" class="btn-accent">Open Example State</button>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:8px">
+        <button id="themeToggle" aria-label="Toggle theme"></button>
+      </div>
     </div>
   </header>
 
-
-
-  
   <main>
-    
+    <!-- your main content goes here -->
   </main>
 
   <script src="script.js"></script>
