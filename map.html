@@ -11,70 +11,63 @@
   <header class="header">
     <div class="brand">
       <div class="logo"></div>
-      <div>
+      <div class="title">
         <h1>Map View</h1>
-        <div style="font-size:12px; color:var(--muted)">Hover a state to see cases — click to open state page</div>
+        <small>Hover a state to see cases — click to open state page</small>
       </div>
     </div>
-    <div class="controls">
-      <a href="index.html" class="card" style="padding:8px 10px; border-radius:10px;">← Back</a>
+
+    <div class="header-controls">
+      <select id="dsSelectHeader" aria-label="dataset">
+        <option>HIV_data.xlsx</option>
+        <option>TB_data.xlsx</option>
+        <option>Malaria_data.xlsx</option>
+        <option>Dengue_data.xlsx</option>
+      </select>
+
+      <input id="yearSelectHeader" type="number" min="1900" max="2100" placeholder="Year" style="width:100px"/>
+
+      <button id="loadHeader">Load</button>
+      <button id="downloadCSVHeader" style="background:#19a37a">Download CSV</button>
+      <button id="themeToggleHeader" style="background:transparent; border:1px solid rgba(0,0,0,0.06); padding:8px 10px; border-radius:8px;">🌙</button>
+      <a class="card" style="padding:8px 10px; border-radius:8px;" href="index.html">Home</a>
     </div>
   </header>
 
   <main class="container">
     <div class="grid">
-      <!-- Left: map + national charts -->
       <div>
         <div class="card">
           <div class="section-title">Choropleth — State cases</div>
-          <div id="map" style="height:var(--map-height)"></div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
-            <div id="totalCases" style="font-weight:700; font-size:15px">Total USA Cases: —</div>
-            <div id="selectedInfo" style="color:var(--muted)"></div>
+          <div id="map"></div>
+          <div style="display:flex; justify-content:space-between; margin-top:12px;">
+            <div id="totalCases" style="font-weight:700">Total USA Cases: —</div>
+            <div id="selectedInfo" class="note"></div>
           </div>
         </div>
 
-        <div class="card chart-card" style="margin-top:16px;">
+        <div class="card" style="margin-top:16px;">
           <div class="section-title">Cases by State — Selected Year</div>
           <canvas id="casesBar" class="chart-canvas"></canvas>
         </div>
 
-        <div class="card chart-card" style="margin-top:16px;">
+        <div class="card" style="margin-top:16px;">
           <div class="section-title">USA Trend — All Years</div>
           <canvas id="casesLine" class="chart-canvas"></canvas>
         </div>
 
-        <div class="card chart-card" style="margin-top:16px;">
-          <div class="section-title">Distribution — State counts (selected year)</div>
-          <canvas id="casesHist" class="small-chart chart-canvas" style="height:260px"></canvas>
+        <div class="card" style="margin-top:16px;">
+          <div class="section-title">Distribution — State counts</div>
+          <canvas id="casesHist" class="chart-small chart-canvas"></canvas>
         </div>
       </div>
 
-      <!-- Right: controls / pivot heatmap -->
       <aside>
         <div class="card">
-          <div class="section-title">Dataset & Year</div>
-          <div style="display:flex; gap:8px; flex-direction:column;">
-            <div>
-              <label style="font-weight:700; font-size:13px">Dataset</label>
-              <select id="dsSelect" style="width:100%; margin-top:6px; padding:8px 10px;"></select>
-            </div>
-            <div>
-              <label style="font-weight:700; font-size:13px">Year</label>
-              <input id="yearSelect" type="number" style="width:100%; margin-top:6px; padding:8px 10px;" />
-            </div>
-            <div style="display:flex; gap:8px; margin-top:10px;">
-              <button id="reloadBtn" style="flex:1;">Load</button>
-              <button id="downloadCSV" style="flex:1; background:#19a37a;">Export CSV</button>
-            </div>
+          <div class="section-title">Heatmap — state × year (matrix)</div>
+          <div class="heatmap-wrapper">
+            <canvas id="matrixHeatmap" style="width:100%; height:420px;"></canvas>
           </div>
-
-          <div style="margin-top:14px;" class="note">Heatmap below shows state × year pivot. Click a cell to open state-year view.</div>
-        </div>
-
-        <div class="card" style="margin-top:16px;">
-          <div class="section-title">Heatmap — state × year</div>
-          <div class="heatmap-wrapper" id="heatmapWrap"></div>
         </div>
 
         <div class="card" style="margin-top:16px;">
@@ -88,9 +81,11 @@
   <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1.0/dist/chartjs-chart-matrix.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script src="map.js"></script>
 </body>
 </html>
+
 
