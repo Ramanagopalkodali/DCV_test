@@ -95,27 +95,77 @@ async function loadState() {
       options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{ title:{ display:true, text:'Year' } }, y:{ beginAtZero:true, ticks:{ callback: formatTick } } }, plugins:{ tooltip:{ callbacks:{ label: ctx => `${ctx.raw.y.toLocaleString()} cases (${ctx.raw.x})` } } } }
     });
 
-    // Bar
-    new Chart(document.getElementById('barChart').getContext('2d'), {
-      type:'bar',
-      data:{ labels: years, datasets:[{ label:'Yearly Cases', data: cases, backgroundColor:'rgba(16,185,129,0.8)', maxBarThickness:48 }]},
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{ tooltip:{ callbacks:{ label: it => `${it.label}: ${it.raw.toLocaleString()} cases` } } }, scales:{ y:{ beginAtZero:true, suggestedMax: roundUpNice(Math.max(...cases||[0])*1.08), ticks:{ callback: formatTick } } } }
-    });
+   /* Helper used in state.js too */
+function niceSuggestedMaxForArr(arr) {
+  const maxVal = Math.max(...(arr||[0]));
+  if (!isFinite(maxVal) || maxVal <= 0) return 10;
+  const raw = maxVal * 1.15;
+  const p = Math.pow(10, Math.floor(Math.log10(raw)));
+  return Math.ceil(raw / p) * p;
+}
 
-    // Histogram
-    (function(){
-      const vals = cases.slice();
-      const buckets = Math.min(8, Math.max(3, Math.round(Math.sqrt(vals.length))));
-      const minV = Math.min(...vals), maxV = Math.max(...vals);
-      const size = (maxV-minV)/(buckets||1) || 1;
-      const counts = new Array(buckets).fill(0);
-      vals.forEach(v => { const idx = Math.min(buckets-1, Math.floor((v-minV)/size)); counts[idx] +=1; });
-      const labels = new Array(buckets).fill(0).map((_,i)=>`${Math.round(minV+i*size)}–${Math.round(minV+(i+1)*size)}`);
-      new Chart(document.getElementById('histChart').getContext('2d'), {
-        type:'bar', data:{ labels, datasets:[{ label:'Count', data:counts, backgroundColor:'rgba(99,102,241,0.8)', maxBarThickness:40 }]},
-        options:{ responsive:true, maintainAspectRatio:false, plugins:{ tooltip:{ callbacks:{ label: it => `${it.raw} states` } } }, scales:{ y:{ beginAtZero:true } } }
-      });
-    })();
+/* --- Bar chart (replace existing) --- */
+safeDestroy(window._stateBarChart); // optional if you tracked charts globally
+const barCtx = document.getElementById('barChart').getContext('2d');
+const barSuggestedMax = niceSuggestedMaxForArr(cases);
+window._stateBarChart = new Chart(barCtx, {
+  type:'bar',
+  data:{ labels: years, datasets:[{ label:'Yearly Cases', data: cases, backgroundColor:'rgba(16,185,129,0.9)', maxBarThickness:48, borderWidth:1, borderColor:'rgba(255,255,255,0.06)'}] },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins: {
+      legend:{ display:false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items && items.length ? `Year ${items[0].label}` : '',
+          label: (ctx) => `${ctx.raw.toLocaleString()} cases`
+        }
+      }
+    },
+    scales: {
+      y: { beginAtZero:true, suggestedMax: barSuggestedMax, ticks:{ callback: formatTick } },
+      x: { ticks:{ autoSkip:true, maxRotation:30 } }
+    }
+  }
+});
+
+/* --- Histogram (replace existing) --- */
+(function(){
+  const vals = cases.slice();
+  const n = vals.length || 1;
+  // Freedman-Diaconis-inspired bin count
+  const sorted = vals.slice().sort((a,b)=>a-b);
+  const q1 = sorted[Math.floor((sorted.length-1)*0.25)] || 0;
+  const q3 = sorted[Math.floor((sorted.length-1)*0.75)] || 0;
+  const iqr = Math.max(0, q3 - q1);
+  let bins;
+  if (iqr > 0) {
+    const h = 2 * iqr / Math.cbrt(n);
+    const range = Math.max(...vals) - Math.min(...vals) || 1;
+    bins = Math.max(4, Math.min(12, Math.round(range / h) || Math.round(Math.sqrt(n))));
+  } else {
+    bins = Math.max(4, Math.min(12, Math.round(Math.sqrt(n))));
+  }
+
+  const minV = Math.min(...vals) || 0, maxV = Math.max(...vals) || 0;
+  const width = (maxV - minV) / (bins || 1) || 1;
+  const counts = new Array(bins).fill(0);
+  vals.forEach(v => { const idx = Math.min(bins-1, Math.floor((v-minV)/width)); counts[idx] += 1; });
+  const labels = new Array(bins).fill(0).map((_,i) => `${Math.round(minV + i*width)}–${Math.round(minV + (i+1)*width)}`);
+
+  safeDestroy(window._stateHistChart);
+  const histCtx = document.getElementById('histChart').getContext('2d');
+  window._stateHistChart = new Chart(histCtx, {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Count', data:counts, backgroundColor:'rgba(99,102,241,0.9)', maxBarThickness:40 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins: { tooltip:{ callbacks:{ title: (items)=> items && items.length ? items[0].label : '', label: (ctx)=> `${ctx.raw} states` } } },
+      scales: { y: { beginAtZero:true }, x:{ ticks:{ autoSkip:true, maxRotation:30 } } }
+    }
+  });
+})();
+
 
     // Box plot using plugin
     (function(){
