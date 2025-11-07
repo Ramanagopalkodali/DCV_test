@@ -18,14 +18,15 @@
     </div>
 
     <div class="header-controls">
+      <!-- disease keys -->
       <select id="dsSelectHeader" aria-label="dataset">
-        <option>HIV_data.xlsx</option>
-        <option>TB_data.xlsx</option>
-        <option>Malaria_data.xlsx</option>
-        <option>Dengue_data.xlsx</option>
+        <option value="HIV">HIV</option>
+        <option value="TB">TB</option>
+        <option value="Malaria">Malaria</option>
+        <option value="Dengue">Dengue</option>
       </select>
 
-      <input id="yearSelectHeader" type="number" min="1900" max="2100" placeholder="Year" style="width:100px"/>
+      <select id="yearSelectHeader" style="width:110px"></select>
 
       <button id="loadHeader">Load</button>
       <button id="downloadCSVHeader" style="background:#19a37a">Download CSV</button>
@@ -78,7 +79,7 @@
     </div>
   </main>
 
-  <!-- libs -->
+  <!-- libs (Chart core + matrix plugin + Leaflet + SheetJS) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1.0/dist/chartjs-chart-matrix.min.js"></script>
@@ -87,5 +88,6 @@
   <script src="map.js"></script>
 </body>
 </html>
+
 
 
