@@ -73,5 +73,11 @@ a{color:var(--accent); text-decoration:none}
 /* misc */
 .note{font-size:13px; color:var(--muted); margin-top:8px}
 
+/* Make sure state map has the same height/appearance as the main map */
+#stateMap {
+  height: var(--map-height);
+  border-radius: 10px;
+  overflow: hidden;
+}
 
 
