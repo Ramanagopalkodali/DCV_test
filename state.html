@@ -20,7 +20,7 @@
     </div>
 
     <div class="header-controls">
-      <button id="themeToggleState" style="background:transparent; border:1px solid rgba(0,0,0,0.06); padding:8px 10px; border-radius:8px;">🌙</button>
+      <button id="themeToggleState" class="theme-btn" title="Toggle Theme">🌙</button>
       <a class="card" style="padding:8px 10px; border-radius:8px;" href="map.html">← Back to Map</a>
       <a class="card" style="padding:8px 10px; border-radius:8px;" href="index.html">Home</a>
     </div>
@@ -37,24 +37,32 @@
 
         <div class="card" style="margin-top:16px;">
           <div class="chart-title">Line Plot — Trend over time</div>
-          <canvas id="lineChart" class="chart-canvas"></canvas>
+          <div style="min-height:320px;">
+            <canvas id="lineChart" class="chart-canvas"></canvas>
+          </div>
         </div>
 
         <div class="card" style="margin-top:16px;">
           <div class="chart-title">Scatter Plot — Cases vs Year</div>
-          <canvas id="scatterChart" class="chart-small chart-canvas"></canvas>
+          <div style="min-height:240px;">
+            <canvas id="scatterChart" class="chart-small chart-canvas"></canvas>
+          </div>
         </div>
       </div>
 
       <aside>
         <div class="card">
           <div class="section-title">Bar Plot — Yearly counts</div>
-          <canvas id="barChart" style="height:250px"></canvas>
+          <div style="min-height:260px;">
+            <canvas id="barChart" class="chart-canvas"></canvas>
+          </div>
         </div>
 
         <div class="card" style="margin-top:16px;">
           <div class="section-title">Histogram — distribution of yearly counts</div>
-          <canvas id="histChart" style="height:220px"></canvas>
+          <div style="min-height:220px;">
+            <canvas id="histChart" class="chart-small chart-canvas"></canvas>
+          </div>
         </div>
 
       </aside>
@@ -62,27 +70,22 @@
 
     <div class="card" style="margin-top:18px;">
       <div class="section-title">Raw data</div>
-      <table id="rawTable" style="width:100%; border-collapse:collapse;"></table>
+      <div style="overflow:auto;">
+        <table id="rawTable" style="width:100%; border-collapse:collapse;"></table>
+      </div>
     </div>
   </main>
 
-  <!-- xlsx (ok as you had it) -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-box-and-violin-plot@3.0.0/dist/chartjs-chart-box-and-violin-plot.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Chart.js UMD (explicit v4 UMD build) -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-<!-- box & violin plugin (UMD build) -->
-<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-box-and-violin-plot@3.0.0/dist/chartjs-chart-box-and-violin-plot.min.js"></script>
-
-<!-- leaflet (ok) -->
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- your code that creates charts (state.js) -->
-<script src="state.js"></script>
-
+  <script src="state.js"></script>
 </body>
 </html>
+
 
 
 
