@@ -209,7 +209,7 @@ async function loadState() {
       });
     }
 
-    // BAR chart: scaled + tooltip
+    // BAR chart
     safeDestroy(window._stateBarChart);
     const barEl = document.getElementById('barChart');
     if (barEl) {
@@ -225,7 +225,7 @@ async function loadState() {
       });
     }
 
-    // HISTOGRAM: Freedman–Diaconis-ish binning
+    // HISTOGRAM
     safeDestroy(window._stateHistChart);
     const histEl = document.getElementById('histChart');
     if (histEl) {
@@ -256,35 +256,6 @@ async function loadState() {
           options:{ responsive:true, maintainAspectRatio:false, plugins:{ tooltip:{ callbacks:{ title: it => it && it.length ? it[0].label : '', label: ctx => `${ctx.raw} states` } } }, scales:{ y:{ beginAtZero:true }, x:{ ticks:{ autoSkip:true, maxRotation:30 } } } }
         });
       })();
-    }
-
-    // BOX plot (if plugin loaded)
-    safeDestroy(window._boxChart);
-    const boxEl = document.getElementById('boxChart');
-    if (boxEl) {
-      const vals = cases.slice().sort((a,b)=>a-b);
-      if (vals.length) {
-        const quantile = (arr,q) => {
-          const pos = (arr.length - 1) * q;
-          const base = Math.floor(pos);
-          const rest = pos - base;
-          return arr[base+1] !== undefined ? arr[base] + rest * (arr[base+1] - arr[base]) : arr[base];
-        };
-        const q1 = quantile(vals,0.25), median = quantile(vals,0.5), q3 = quantile(vals,0.75);
-        const min = vals[0], max = vals[vals.length-1];
-        // ensure boxplot plugin exists
-        if (window.Chart && (Chart.registry && typeof Chart.registry.getController === 'function' ? !!Chart.registry.getController('boxplot') : !!Chart.controllers && !!Chart.controllers.boxplot)) {
-          window._boxChart = new Chart(boxEl.getContext('2d'), {
-            type:'boxplot',
-            data:{ labels:[stateParam], datasets:[{ label:'Distribution', backgroundColor:'rgba(79,70,229,0.7)', borderColor:'#4f46e5', data:[{min,q1,median,q3,max}] }]},
-            options:{ responsive:true, maintainAspectRatio:false, plugins:{ tooltip:{ callbacks:{ label: ctx => { const d=ctx.raw; return `min:${d.min} q1:${d.q1} median:${d.median} q3:${d.q3} max:${d.max}`; } } } }, scales:{ y:{ beginAtZero:true, ticks:{ callback: formatTick } } } }
-          });
-        } else {
-          // plugin missing: show simple summary text below map
-          const boxWrap = boxEl.parentElement;
-          if (boxWrap) boxWrap.querySelector('.section-title') && (boxWrap.querySelector('.section-title').textContent += ' (boxplot plugin missing)');
-        }
-      }
     }
 
   } catch (err) {
