@@ -20,7 +20,6 @@
     </div>
 
     <div class="header-controls">
-      <!-- disease keys -->
       <select id="dsSelectHeader" aria-label="dataset">
         <option value="HIV">HIV</option>
         <option value="TB">TB</option>
@@ -34,9 +33,9 @@
 
       <select id="yearSelectHeader" style="width:110px"></select>
 
-      <button id="loadHeader">Load</button>
-      <button id="downloadCSVHeader" style="background:#19a37a">Download CSV</button>
-      <button id="themeToggleHeader" style="background:transparent; border:1px solid rgba(0,0,0,0.06); padding:8px 10px; border-radius:8px;">🌙</button>
+      <button id="loadHeader" class="btn-light">Load</button>
+      <button id="downloadCSVHeader" class="btn-green">Download CSV</button>
+      <button id="themeToggleHeader" class="theme-btn" title="Toggle theme">🌙</button>
       <a class="card" style="padding:8px 10px; border-radius:8px;" href="index.html">Home</a>
     </div>
   </header>
@@ -55,17 +54,23 @@
 
         <div class="card" style="margin-top:16px;">
           <div class="section-title">Cases by State — Selected Year</div>
-          <canvas id="casesBar" class="chart-canvas"></canvas>
+          <div style="min-height:320px;">
+            <canvas id="casesBar" class="chart-canvas"></canvas>
+          </div>
         </div>
 
         <div class="card" style="margin-top:16px;">
           <div class="section-title">USA Trend — All Years</div>
-          <canvas id="casesLine" class="chart-canvas"></canvas>
+          <div style="min-height:320px;">
+            <canvas id="casesLine" class="chart-canvas"></canvas>
+          </div>
         </div>
 
         <div class="card" style="margin-top:16px;">
           <div class="section-title">Distribution — State counts</div>
-          <canvas id="casesHist" class="chart-small chart-canvas"></canvas>
+          <div style="min-height:240px;">
+            <canvas id="casesHist" class="chart-small chart-canvas"></canvas>
+          </div>
         </div>
       </div>
 
@@ -73,7 +78,7 @@
         <div class="card">
           <div class="section-title">Heatmap — state × year (matrix)</div>
           <div class="heatmap-wrapper">
-            <canvas id="matrixHeatmap" style="width:100%; height:420px;"></canvas>
+            <canvas id="matrixHeatmap"></canvas>
           </div>
         </div>
 
@@ -85,7 +90,7 @@
     </div>
   </main>
 
-  <!-- libs (Chart core + matrix plugin + Leaflet + SheetJS) -->
+  <!-- libs (SheetJS, Chart.js, matrix plugin, Leaflet) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1.0/dist/chartjs-chart-matrix.min.js"></script>
