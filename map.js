@@ -292,7 +292,6 @@ function drawHist(values) {
 
 
 // matrix heatmap (matrix plugin) with fallback handled in drawMatrixHeatmap function
-// ---- replace existing drawMatrixHeatmap with this ----
 async function drawMatrixHeatmap(pivot, years, states, minV, maxV) {
   // utility to set wrapper height equal to #map
   function syncWrapperHeight() {
@@ -301,38 +300,31 @@ async function drawMatrixHeatmap(pivot, years, states, minV, maxV) {
     if (!wrap || !mapEl) return;
     const h = Math.max(240, mapEl.getBoundingClientRect().height || 420);
     wrap.style.height = (h) + 'px';
-    // also set canvas explicit height to match; Chart will pick canvas clientHeight
     const canvas = document.getElementById('matrixHeatmap');
     if (canvas) {
       canvas.width = canvas.clientWidth;
       canvas.style.height = wrap.style.height;
-      // force actual pixel height too (helps Chart sizing)
       canvas.height = Math.round(parseFloat(wrap.style.height));
     }
   }
 
-  // call sync on init and on resize
   syncWrapperHeight();
   window.addEventListener('resize', syncWrapperHeight);
 
-  // try the matrix plugin
   try {
     const hasMatrix = window.Chart && (Chart.registry && typeof Chart.registry.getController === 'function' ? !!Chart.registry.getController('matrix') : !!Chart.controllers && !!Chart.controllers.matrix);
     if (!hasMatrix) throw new Error('matrix plugin not loaded');
 
-    // prepare data for matrix
     const xLabels = years.map(String);
     const yLabels = states.slice();
     const data = [];
     years.forEach((yr, xi) => states.forEach((st, yi) => data.push({ x: xi, y: yi, v: pivot[st][yr] || 0 })));
 
-    // destroy previous
     if (matrixChartRef) safeDestroy(matrixChartRef);
 
     const canvasEl = document.getElementById('matrixHeatmap');
     if (!canvasEl) throw new Error('matrixHeatmap canvas not found');
 
-    // ensure canvas has proper height (client)
     syncWrapperHeight();
     const ctx = canvasEl.getContext('2d');
 
@@ -344,7 +336,6 @@ async function drawMatrixHeatmap(pivot, years, states, minV, maxV) {
           data,
           width: ({ chart }) => Math.max(6, (chart.chartArea.width / xLabels.length) - 1),
           height: ({ chart }) => Math.max(6, (chart.chartArea.height / yLabels.length) - 1),
-          // backgroundColor computed per cell:
           backgroundColor: ctx => colorRamp(ctx.dataset.data[ctx.dataIndex].v, minV, maxV)
         }]
       },
@@ -375,34 +366,7 @@ async function drawMatrixHeatmap(pivot, years, states, minV, maxV) {
       }
     });
 
-    // connect sliders to scroll of the canvas parent (no-op if matrix plugin occupies full width)
-    const wrapper = document.getElementById('heatmapWrapper');
-    const hSlider = document.getElementById('heatmapHoriz');
-    const vSlider = document.getElementById('heatmapVert');
-    if (wrapper && hSlider && vSlider) {
-      // set slider ranges based on scrollable size
-      function refreshSliders() {
-        const maxScrollLeft = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
-        hSlider.max = maxScrollLeft > 0 ? String(maxScrollLeft) : '0';
-        const maxScrollTop = Math.max(0, wrapper.scrollHeight - wrapper.clientHeight);
-        vSlider.max = maxScrollTop > 0 ? String(maxScrollTop) : '0';
-        // set slider position
-        hSlider.value = Math.round(wrapper.scrollLeft || 0);
-        vSlider.value = Math.round(wrapper.scrollTop || 0);
-      }
-      // bind slider -> wrapper
-      hSlider.addEventListener('input', () => { wrapper.scrollLeft = Number(hSlider.value); });
-      vSlider.addEventListener('input', () => { wrapper.scrollTop = Number(vSlider.value); });
-      // sync wrapper scroll -> sliders
-      wrapper.addEventListener('scroll', () => {
-        hSlider.value = Math.round(wrapper.scrollLeft || 0);
-        vSlider.value = Math.round(wrapper.scrollTop || 0);
-      });
-      // initial refresh after chart painted
-      setTimeout(refreshSliders, 300);
-      window.addEventListener('resize', refreshSliders);
-    }
-
+    // optional linking to scroll sliders (if you add them)
     return;
   } catch (err) {
     console.warn('matrix plugin missing or error — fallback table:', err);
@@ -410,16 +374,13 @@ async function drawMatrixHeatmap(pivot, years, states, minV, maxV) {
     const canvas = document.getElementById('matrixHeatmap');
     if (canvas) canvas.style.display = 'none';
 
-    // build fallback table sized to the map height
-    const yearsToShow = years.slice(); // show all years
+    const yearsToShow = years.slice();
     const statesToShow = states.slice();
 
-    // build table html
     let html = '<div class="heatmap-fallback" style="padding:10px; background:transparent;">';
     html += '<div style="font-weight:700;margin-bottom:8px;">Heatmap (fallback)</div>';
     html += '<div style="overflow:auto; max-height:100%;">';
     html += '<table style="min-width:600px;">';
-    // header
     html += '<thead><tr><th>State</th>';
     yearsToShow.forEach(y => html += `<th>${y}</th>`);
     html += '</tr></thead><tbody>';
@@ -434,40 +395,16 @@ async function drawMatrixHeatmap(pivot, years, states, minV, maxV) {
     });
     html += '</tbody></table></div></div>';
 
-    // inject or replace fallback
     let fb = wrapper.querySelector('.heatmap-fallback');
     if (fb) fb.outerHTML = html;
     else wrapper.insertAdjacentHTML('beforeend', html);
 
-    // now set wrapper height equal to map height
     syncWrapperHeight();
 
-    // wire sliders to wrapper scroll (two-way pan)
+    // make fallback table rows clickable to go to state page
     const wrap = document.getElementById('heatmapWrapper');
-    const hSlider = document.getElementById('heatmapHoriz');
-    const vSlider = document.getElementById('heatmapVert');
-    function refreshSliders() {
-      const maxScrollLeft = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
-      hSlider.max = maxScrollLeft > 0 ? String(maxScrollLeft) : '0';
-      const maxScrollTop = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
-      vSlider.max = maxScrollTop > 0 ? String(maxScrollTop) : '0';
-      hSlider.value = Math.round(wrap.scrollLeft || 0);
-      vSlider.value = Math.round(wrap.scrollTop || 0);
-    }
-    if (hSlider && vSlider) {
-      hSlider.addEventListener('input', () => { wrap.scrollLeft = Number(hSlider.value); });
-      vSlider.addEventListener('input', () => { wrap.scrollTop = Number(vSlider.value); });
-      wrap.addEventListener('scroll', () => {
-        hSlider.value = Math.round(wrap.scrollLeft || 0);
-        vSlider.value = Math.round(wrap.scrollTop || 0);
-      });
-      setTimeout(refreshSliders, 120);
-      window.addEventListener('resize', refreshSliders);
-    }
-
-    // clicking cells to open state
-    wrapper.querySelectorAll('tbody tr').forEach((tr) => {
-      tr.addEventListener('click', (ev) => {
+    wrap.querySelectorAll('tbody tr').forEach((tr) => {
+      tr.addEventListener('click', () => {
         const first = tr.querySelector('td');
         if (!first) return;
         const stateName = first.textContent.trim();
@@ -531,39 +468,28 @@ async function loadAll() {
     drawLine(rows);
     drawHist(vals);
     await drawMatrixHeatmap(pivot, years, states, minV, maxV);
-    renderLegend(minV, maxV);
 
-    setTimeout(()=>{ [barChart, lineChart, histChart, matrixChartRef].forEach(ch => { try { ch && ch.resize && ch.resize(); } catch(e){} }); }, 200);
-  } catch(err){
+    // legend
+    if (legendWrap) legendWrap.innerHTML = `<div class="note">Color scale from ${minV} → ${maxV}</div>`;
+
+  } catch (err) {
     console.error('loadAll error', err);
-    if (selectedInfoEl) selectedInfoEl.textContent = 'Failed to load data (see console)';
-    if (totalCasesEl) totalCasesEl.textContent = '—';
-    const wrapper = document.querySelector('.heatmap-wrapper');
-    if (wrapper) wrapper.innerHTML = `<div class="card" style="padding:12px;">Heatmap unavailable: ${err.message || 'error'}</div>`;
+    if (totalCasesEl) totalCasesEl.textContent = 'Failed to load data';
+    if (selectedInfoEl) selectedInfoEl.textContent = `Error: ${err.message}`;
   }
 }
 
-// wire up header load/export
-if (loadHeader) loadHeader.addEventListener('click', () => { loadAll(); });
-if (downloadCSVHeader) downloadCSVHeader.addEventListener('click', () => exportVisibleCSV());
+// wire buttons
+if (loadHeader) loadHeader.addEventListener('click', loadAll);
+if (downloadCSVHeader) downloadCSVHeader.addEventListener('click', exportVisibleCSV);
+if (dsSelectHeader) dsSelectHeader.addEventListener('change', () => populateYearSelectForDisease(dsSelectHeader.value));
 
-// on initial load: set select and populate years then load
-(async () => {
-  try {
-    if (dsSelectHeader) dsSelectHeader.value = diseaseKey;
-    await populateYearSelectForDisease(diseaseKey);
-    if (yearSelectHeader && selectedYear) {
-      const opt = Array.from(yearSelectHeader.options).find(o => o.value === String(selectedYear));
-      if (opt) yearSelectHeader.value = selectedYear;
-    }
-    if (dsSelectHeader) dsSelectHeader.addEventListener('change', async () => {
-      diseaseKey = dsSelectHeader.value;
-      await populateYearSelectForDisease(diseaseKey);
-    });
-    if (yearSelectHeader) yearSelectHeader.addEventListener('change', () => { selectedYear = yearSelectHeader.value; sessionStorage.setItem('lastYear', selectedYear); });
-    await loadAll();
-  } catch(e){ console.error('init error', e); loadAll(); }
-})();
+// init
+populateYearSelectForDisease(diseaseKey).then(() => {
+  // set yearSelectHeader value if present
+  if (yearSelectHeader && selectedYear) yearSelectHeader.value = selectedYear;
+  loadAll();
+}).catch(e => { console.warn('init populate fail', e); loadAll(); });
 
 
 
