@@ -1,4 +1,4 @@
-// Theme toggle
+// === Theme toggle ===
 const themeToggle = document.getElementById('themeToggle');
 const currentTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', currentTheme);
@@ -6,7 +6,6 @@ document.documentElement.setAttribute('data-theme', currentTheme);
 function updateThemeIcon() {
   const theme = document.documentElement.getAttribute('data-theme');
   themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-  themeToggle.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
 }
 updateThemeIcon();
 
@@ -17,7 +16,7 @@ themeToggle.addEventListener('click', () => {
   updateThemeIcon();
 });
 
-// Dataset mapping
+// === Dataset mapping ===
 const datasetsMap = {
   'HIV': 'HIV_data.xlsx',
   'TB': 'TB_data.xlsx',
@@ -28,54 +27,6 @@ const datasetsMap = {
 const diseaseSelect = document.getElementById('diseaseSelect');
 const yearSelect = document.getElementById('yearInput');
 
-// Populate years dynamically
-async function populateYearsForDisease(diseaseKey) {
-  const filenameCandidates = [
-    datasetsMap[diseaseKey],
-    datasetsMap[diseaseKey].replace('.xlsx', '.json')
-  ];
-  let rows = null;
-
-  for (const fname of filenameCandidates) {
-    if (!fname) continue;
-    try {
-      if (fname.toLowerCase().endsWith('.json')) {
-        const resp = await fetch(fname);
-        if (!resp.ok) continue;
-        rows = await resp.json();
-      } else if (fname.toLowerCase().endsWith('.xlsx') || fname.toLowerCase().endsWith('.xls')) {
-        const resp = await fetch(fname);
-        if (!resp.ok) continue;
-        const buf = await resp.arrayBuffer();
-        await ensureXLSX();
-        const wb = XLSX.read(buf);
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json(sheet);
-      }
-      if (Array.isArray(rows) && rows.length) break;
-    } catch (e) {
-      console.warn('Error loading', fname, e);
-    }
-  }
-
-  yearSelect.innerHTML = '';
-  if (!rows || !rows.length) {
-    const opt = document.createElement('option');
-    opt.textContent = 'No years';
-    yearSelect.appendChild(opt);
-    return;
-  }
-
-  const years = [...new Set(rows.map(r => Number(r.Year)).filter(Boolean))].sort((a, b) => a - b);
-  years.forEach(y => {
-    const opt = document.createElement('option');
-    opt.value = y;
-    opt.textContent = y;
-    yearSelect.appendChild(opt);
-  });
-}
-
-// Lazy-load SheetJS if not loaded
 async function ensureXLSX() {
   if (typeof XLSX !== 'undefined') return;
   await new Promise((res, rej) => {
@@ -87,25 +38,69 @@ async function ensureXLSX() {
   });
 }
 
-// Initialize
+async function populateYearsForDisease(diseaseKey) {
+  const fname = datasetsMap[diseaseKey];
+  if (!fname) return;
+  let rows = [];
+  try {
+    const resp = await fetch(fname);
+    if (!resp.ok) throw new Error('not found');
+    const buf = await resp.arrayBuffer();
+    await ensureXLSX();
+    const wb = XLSX.read(buf);
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    rows = XLSX.utils.sheet_to_json(sheet);
+  } catch (e) {
+    console.warn('Error reading', diseaseKey, e);
+  }
+  yearSelect.innerHTML = '';
+  if (!rows.length) {
+    const opt = document.createElement('option');
+    opt.textContent = 'No data';
+    yearSelect.appendChild(opt);
+    return;
+  }
+  const years = [...new Set(rows.map(r => Number(r.Year)).filter(Boolean))].sort((a,b)=>a-b);
+  years.forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    yearSelect.appendChild(opt);
+  });
+}
+
+// === Init ===
 (async () => {
   await ensureXLSX();
   await populateYearsForDisease(diseaseSelect.value);
 })();
-
 diseaseSelect.addEventListener('change', () => populateYearsForDisease(diseaseSelect.value));
 
+// === Map and State redirects ===
 document.getElementById('viewMap').addEventListener('click', () => {
-  const diseaseKey = diseaseSelect.value;
-  const year = yearSelect.value;
-  if (!diseaseKey || !year) return alert('Choose disease and year');
-  window.location.href = `map.html?disease=${encodeURIComponent(diseaseKey)}&year=${encodeURIComponent(year)}`;
+  const d = diseaseSelect.value, y = yearSelect.value;
+  if (!d || !y) return alert('Choose disease and year');
+  window.location.href = `map.html?disease=${encodeURIComponent(d)}&year=${encodeURIComponent(y)}`;
 });
 
 document.getElementById('openState').addEventListener('click', () => {
-  const diseaseKey = diseaseSelect.value;
-  const year = yearSelect.value;
-  const exampleState = 'California';
-  if (!diseaseKey || !year) return alert('Choose disease and year');
-  window.location.href = `state.html?state=${encodeURIComponent(exampleState)}&disease=${encodeURIComponent(diseaseKey)}&year=${encodeURIComponent(year)}`;
+  const d = diseaseSelect.value, y = yearSelect.value;
+  if (!d || !y) return alert('Choose disease and year');
+  window.location.href = `state.html?state=California&disease=${encodeURIComponent(d)}&year=${encodeURIComponent(y)}`;
+});
+
+// === Extra buttons ===
+['heroOpenMap','openMapAside'].forEach(id => {
+  const btn = document.getElementById(id);
+  if (btn) btn.addEventListener('click', () => {
+    const d = diseaseSelect.value, y = yearSelect.value;
+    window.location.href = d && y
+      ? `map.html?disease=${encodeURIComponent(d)}&year=${encodeURIComponent(y)}`
+      : 'map.html';
+  });
+});
+
+const openStateAside = document.getElementById('openStateAside');
+if (openStateAside) openStateAside.addEventListener('click', () => {
+  const d = diseaseSelect.value, y = yearSelect.value;
+  window.location.href = `state.html?state=California${d&&y?`&disease=${encodeURIComponent(d)}&year=${encodeURIComponent(y)}`:''}`;
 });
