@@ -43,7 +43,8 @@
 
   <!-- Hero Section -->
   <div class="hero fade-in">
-    <img src="assets/usa_map.jpg" alt="Health analytics map" class="hero-img">
+    <!-- Put the hero image at assets/usa_map.jpg -->
+    <img src="assets/usa_map.jpg" alt="Health analytics map" class="hero-img" onerror="this.style.display='none'">
     <div class="hero-overlay">
       <h2>Health Analytics Across USA & Territories</h2>
       <p>Interactive state maps • Year-by-year trends • Public health resources</p>
@@ -82,30 +83,34 @@
         <article id="datasources" class="card">
           <h3 class="section-title">Explore These Data Sources</h3>
           <ul class="datasources-list">
-            <li><a href="https://wonder.cdc.gov" target="_blank">CDC WONDER</a> — Mortality & health statistics</li>
-            <li><a href="https://www.cdc.gov/atlas" target="_blank">CDC AtlasPlus</a> — Interactive infectious disease maps</li>
-            <li><a href="https://gis.cdc.gov/grasp/diabetes/DiabetesAtlas.html" target="_blank">CDC Diabetes Surveillance System</a></li>
+            <li><a href="https://wonder.cdc.gov" target="_blank" rel="noopener">CDC WONDER</a> — Mortality & health statistics</li>
+            <li><a href="https://www.cdc.gov/atlas" target="_blank" rel="noopener">CDC AtlasPlus</a> — Interactive infectious disease maps</li>
+            <li><a href="https://gis.cdc.gov/grasp/diabetes/DiabetesAtlas.html" target="_blank" rel="noopener">CDC Diabetes Surveillance System</a></li>
           </ul>
         </article>
 
         <article class="card">
-          <h3 class="section-title">Health Suggestions for Viewers</h3>
-          <p>💡 Regular checkups, vaccinations, and awareness of regional disease trends help prevent outbreaks. Explore your state’s data to see how rates have changed over time.</p>
+          <h3 class="section-title">Health Suggestions & Helpful Links</h3>
+          <ul class="datasources-list">
+            <li><a href="https://www.cdc.gov/vaccines" target="_blank" rel="noopener">Vaccination guidance — CDC</a></li>
+            <li><a href="https://www.nih.gov/health-information" target="_blank" rel="noopener">NIH — Public health information</a></li>
+            <li><a href="https://healthfinder.gov" target="_blank" rel="noopener">Healthfinder — Prevention & checkups</a></li>
+          </ul>
+          <p class="note">Tip: Regular checkups, up-to-date vaccinations and local awareness help reduce disease spread. Use the map to explore state-level trends.</p>
         </article>
       </section>
 
       <!-- Right column -->
       <aside class="right-col">
-        <div class="card quick-card">
-          <h4>Quick Actions</h4>
-          <button id="openMapAside" class="btn-block">Open National Map</button>
-          <button id="openStateAside" class="btn-block outline">Open Example State</button>
-          <a class="btn-link" href="map.html">Map Dashboard →</a>
+        <div class="card">
+          <h4 class="small-title">Navigation</h4>
+          <a class="btn-link" href="map.html">Open National Map →</a>
           <a class="btn-link" href="state.html?state=California">Sample State →</a>
+          <a class="btn-link" href="#datasources">Data Sources →</a>
         </div>
 
         <div class="card">
-          <h4>At a glance</h4>
+          <h4 class="small-title">At a glance</h4>
           <ul class="atglance">
             <li><strong>50</strong> states</li>
             <li><strong>5</strong> territories</li>
@@ -124,6 +129,7 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
