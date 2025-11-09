@@ -292,71 +292,194 @@ function drawHist(values) {
 
 
 // matrix heatmap (matrix plugin) with fallback handled in drawMatrixHeatmap function
+// ---- replace existing drawMatrixHeatmap with this ----
 async function drawMatrixHeatmap(pivot, years, states, minV, maxV) {
+  // utility to set wrapper height equal to #map
+  function syncWrapperHeight() {
+    const mapEl = document.getElementById('map');
+    const wrap = document.getElementById('heatmapWrapper');
+    if (!wrap || !mapEl) return;
+    const h = Math.max(240, mapEl.getBoundingClientRect().height || 420);
+    wrap.style.height = (h) + 'px';
+    // also set canvas explicit height to match; Chart will pick canvas clientHeight
+    const canvas = document.getElementById('matrixHeatmap');
+    if (canvas) {
+      canvas.width = canvas.clientWidth;
+      canvas.style.height = wrap.style.height;
+      // force actual pixel height too (helps Chart sizing)
+      canvas.height = Math.round(parseFloat(wrap.style.height));
+    }
+  }
+
+  // call sync on init and on resize
+  syncWrapperHeight();
+  window.addEventListener('resize', syncWrapperHeight);
+
+  // try the matrix plugin
   try {
     const hasMatrix = window.Chart && (Chart.registry && typeof Chart.registry.getController === 'function' ? !!Chart.registry.getController('matrix') : !!Chart.controllers && !!Chart.controllers.matrix);
     if (!hasMatrix) throw new Error('matrix plugin not loaded');
 
-    const xLabels = years.map(String), yLabels = states.slice();
+    // prepare data for matrix
+    const xLabels = years.map(String);
+    const yLabels = states.slice();
     const data = [];
     years.forEach((yr, xi) => states.forEach((st, yi) => data.push({ x: xi, y: yi, v: pivot[st][yr] || 0 })));
 
+    // destroy previous
     if (matrixChartRef) safeDestroy(matrixChartRef);
+
     const canvasEl = document.getElementById('matrixHeatmap');
     if (!canvasEl) throw new Error('matrixHeatmap canvas not found');
+
+    // ensure canvas has proper height (client)
+    syncWrapperHeight();
     const ctx = canvasEl.getContext('2d');
+
     matrixChartRef = new Chart(ctx, {
       type: 'matrix',
-      data: { datasets:[{ label:'State×Year', data, width: ({chart}) => (chart.chartArea.width / xLabels.length) - 1, height: ({chart}) => (chart.chartArea.height / yLabels.length) - 1, backgroundColor: ctx => colorRamp(ctx.dataset.data[ctx.dataIndex].v, minV, maxV) }]},
+      data: {
+        datasets: [{
+          label: 'State×Year',
+          data,
+          width: ({ chart }) => Math.max(6, (chart.chartArea.width / xLabels.length) - 1),
+          height: ({ chart }) => Math.max(6, (chart.chartArea.height / yLabels.length) - 1),
+          // backgroundColor computed per cell:
+          backgroundColor: ctx => colorRamp(ctx.dataset.data[ctx.dataIndex].v, minV, maxV)
+        }]
+      },
       options: {
-        maintainAspectRatio:false,
+        maintainAspectRatio: false,
         plugins: {
-          tooltip: { callbacks: {
-            title: items => { const it = items[0]; const dp = it.dataset.data[it.dataIndex]; return `${yLabels[dp.y]} — ${xLabels[dp.x]}`; },
-            label: items => `Cases: ${items.raw ? items.raw.v : items.dataset.data[items.dataIndex].v}`
-          } }
+          tooltip: {
+            callbacks: {
+              title: items => {
+                const it = items[0]; const dp = it.dataset.data[it.dataIndex]; return `${yLabels[dp.y]} — ${xLabels[dp.x]}`;
+              },
+              label: items => `Cases: ${items.raw ? items.raw.v : items.dataset.data[items.dataIndex].v}`
+            }
+          }
         },
         scales: {
-          x: { type:'category', labels:xLabels, position:'bottom', grid:{ display:false }, ticks:{ maxRotation:45, autoSkip:true, maxTicksLimit:10 } },
-          y: { type:'category', labels:yLabels, grid:{ display:false }, ticks:{ autoSkip:true, maxTicksLimit:20 } }
+          x: { type: 'category', labels: xLabels, position: 'bottom', grid: { display: false }, ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 12 } },
+          y: { type: 'category', labels: yLabels, grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 40 } }
         },
         onClick: (evt, elements) => {
           if (!elements.length) return;
           const el = elements[0];
           const dp = matrixChartRef.data.datasets[el.datasetIndex].data[el.index];
           const year = xLabels[dp.x], state = yLabels[dp.y];
-          saveMapState();
+          try { const c = leafletMap.getCenter(); sessionStorage.setItem('mapState', JSON.stringify({ center: [c.lat, c.lng], zoom: leafletMap.getZoom(), disease: diseaseKey, year: selectedYear })); } catch (e) {}
           window.location.href = `state.html?state=${encodeURIComponent(state)}&disease=${encodeURIComponent(diseaseKey)}&year=${year}`;
         }
       }
     });
+
+    // connect sliders to scroll of the canvas parent (no-op if matrix plugin occupies full width)
+    const wrapper = document.getElementById('heatmapWrapper');
+    const hSlider = document.getElementById('heatmapHoriz');
+    const vSlider = document.getElementById('heatmapVert');
+    if (wrapper && hSlider && vSlider) {
+      // set slider ranges based on scrollable size
+      function refreshSliders() {
+        const maxScrollLeft = Math.max(0, wrapper.scrollWidth - wrapper.clientWidth);
+        hSlider.max = maxScrollLeft > 0 ? String(maxScrollLeft) : '0';
+        const maxScrollTop = Math.max(0, wrapper.scrollHeight - wrapper.clientHeight);
+        vSlider.max = maxScrollTop > 0 ? String(maxScrollTop) : '0';
+        // set slider position
+        hSlider.value = Math.round(wrapper.scrollLeft || 0);
+        vSlider.value = Math.round(wrapper.scrollTop || 0);
+      }
+      // bind slider -> wrapper
+      hSlider.addEventListener('input', () => { wrapper.scrollLeft = Number(hSlider.value); });
+      vSlider.addEventListener('input', () => { wrapper.scrollTop = Number(vSlider.value); });
+      // sync wrapper scroll -> sliders
+      wrapper.addEventListener('scroll', () => {
+        hSlider.value = Math.round(wrapper.scrollLeft || 0);
+        vSlider.value = Math.round(wrapper.scrollTop || 0);
+      });
+      // initial refresh after chart painted
+      setTimeout(refreshSliders, 300);
+      window.addEventListener('resize', refreshSliders);
+    }
+
     return;
-  } catch(err) {
-    console.warn('matrix plugin missing or error, falling back to table:', err);
-    const wrapper = document.querySelector('.heatmap-wrapper');
+  } catch (err) {
+    console.warn('matrix plugin missing or error — fallback table:', err);
+    const wrapper = document.getElementById('heatmapWrapper');
     const canvas = document.getElementById('matrixHeatmap');
     if (canvas) canvas.style.display = 'none';
-    let fb = document.querySelector('.heatmap-fallback');
-    if (!fb) { fb = document.createElement('div'); fb.className = 'heatmap-fallback card'; if (wrapper) wrapper.appendChild(fb); }
-    const yearsToShow = years.slice(-8);
-    let html = '<div style="font-weight:700;margin-bottom:8px;">Heatmap (fallback)</div>';
-    html += '<div style="overflow:auto;"><table style="border-collapse:collapse;width:100%"><thead><tr><th style="padding:6px;text-align:left">State</th>';
-    yearsToShow.forEach(y => html += `<th style="padding:6px">${y}</th>`);
+
+    // build fallback table sized to the map height
+    const yearsToShow = years.slice(); // show all years
+    const statesToShow = states.slice();
+
+    // build table html
+    let html = '<div class="heatmap-fallback" style="padding:10px; background:transparent;">';
+    html += '<div style="font-weight:700;margin-bottom:8px;">Heatmap (fallback)</div>';
+    html += '<div style="overflow:auto; max-height:100%;">';
+    html += '<table style="min-width:600px;">';
+    // header
+    html += '<thead><tr><th>State</th>';
+    yearsToShow.forEach(y => html += `<th>${y}</th>`);
     html += '</tr></thead><tbody>';
-    states.forEach(s => { html += `<tr><td style="padding:6px;font-weight:600">${s}</td>`; yearsToShow.forEach(y => { const v = pivot[s][y] || 0; const bg = colorRamp(v,minV,maxV); html += `<td style="padding:6px;text-align:center;background:${bg}">${v}</td>`; }); html += '</tr>'; });
-    html += '</tbody></table></div>';
-    if (fb) fb.innerHTML = html;
+    statesToShow.forEach(s => {
+      html += `<tr><td style="font-weight:600; text-align:left;">${s}</td>`;
+      yearsToShow.forEach(y => {
+        const v = pivot[s] && pivot[s][y] ? pivot[s][y] : 0;
+        const bg = colorRamp(v, minV, maxV);
+        html += `<td style="background:${bg};">${v}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+
+    // inject or replace fallback
+    let fb = wrapper.querySelector('.heatmap-fallback');
+    if (fb) fb.outerHTML = html;
+    else wrapper.insertAdjacentHTML('beforeend', html);
+
+    // now set wrapper height equal to map height
+    syncWrapperHeight();
+
+    // wire sliders to wrapper scroll (two-way pan)
+    const wrap = document.getElementById('heatmapWrapper');
+    const hSlider = document.getElementById('heatmapHoriz');
+    const vSlider = document.getElementById('heatmapVert');
+    function refreshSliders() {
+      const maxScrollLeft = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+      hSlider.max = maxScrollLeft > 0 ? String(maxScrollLeft) : '0';
+      const maxScrollTop = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+      vSlider.max = maxScrollTop > 0 ? String(maxScrollTop) : '0';
+      hSlider.value = Math.round(wrap.scrollLeft || 0);
+      vSlider.value = Math.round(wrap.scrollTop || 0);
+    }
+    if (hSlider && vSlider) {
+      hSlider.addEventListener('input', () => { wrap.scrollLeft = Number(hSlider.value); });
+      vSlider.addEventListener('input', () => { wrap.scrollTop = Number(vSlider.value); });
+      wrap.addEventListener('scroll', () => {
+        hSlider.value = Math.round(wrap.scrollLeft || 0);
+        vSlider.value = Math.round(wrap.scrollTop || 0);
+      });
+      setTimeout(refreshSliders, 120);
+      window.addEventListener('resize', refreshSliders);
+    }
+
+    // clicking cells to open state
+    wrapper.querySelectorAll('tbody tr').forEach((tr) => {
+      tr.addEventListener('click', (ev) => {
+        const first = tr.querySelector('td');
+        if (!first) return;
+        const stateName = first.textContent.trim();
+        try { const c = leafletMap.getCenter(); sessionStorage.setItem('mapState', JSON.stringify({ center: [c.lat, c.lng], zoom: leafletMap.getZoom(), disease: diseaseKey, year: selectedYear })); } catch (e) {}
+        window.location.href = `state.html?state=${encodeURIComponent(stateName)}&disease=${encodeURIComponent(diseaseKey)}&year=${selectedYear}`;
+      });
+    });
+
+    return;
   }
 }
 
-function renderLegend(minV,maxV){
-  const wrap = document.getElementById('legendWrap');
-  if (!wrap) return;
-  let html = '<div class="info legend"><strong>Cases</strong><div style="display:flex;gap:8px;margin-top:8px;align-items:center">';
-  for (let i=0;i<=5;i++){ const v=Math.round(minV + (i/5)*(maxV-minV)); html += `<span style="display:flex;gap:6px;align-items:center"><span style="width:20px;height:12px;background:${colorRamp(v,minV,maxV)};display:inline-block;border-radius:3px;"></span><small style="color:var(--muted)">${formatTick(v)}</small></span>`; }
-  html += '</div></div>';
-  wrap.innerHTML = html;
-}
 
 // CSV export (matrixChart or fallback table)
 function exportVisibleCSV(){
