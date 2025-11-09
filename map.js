@@ -187,8 +187,8 @@ function niceSuggestedMax(arr) {
   if (!isFinite(maxVal) || maxVal <= 0) return 10;
   const raw = maxVal * 1.15;
   const p = Math.pow(10, Math.floor(Math.log10(raw)));
-  const nice = Math.ceil(raw / p) * p;
-  return nice;
+  const nice = Math.ceil(raw / p);
+  return nice * p;
 }
 
 function drawBar(stateValues, year, minV, maxV){
