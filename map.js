@@ -9,7 +9,7 @@ const datasetsMap = {
   'HIV': 'HIV_data.xlsx',
   'TB': 'TB_data.xlsx',
   'Diabetes': 'Diabetes.xlsx',
-  'Dengue': 'Dengue_data.xlsx'
+  'Hepatitis-B': 'HepatitisB.xlsx'
 };
 
 const dsSelectHeader = document.getElementById('dsSelectHeader');
