@@ -24,7 +24,7 @@
     'HIV': 'HIV_data.xlsx',
     'TB': 'TB_data.xlsx',
     'Diabetes': 'Diabetes.xlsx',
-    '': 'HepatitisB.xlsx'
+    'Hepatitis-B': 'HepatitisB.xlsx'
   };
 
   const diseaseSelect = document.getElementById('diseaseSelect');
