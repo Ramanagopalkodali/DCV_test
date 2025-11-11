@@ -7,10 +7,16 @@ let selectedYear = params.get('year') || sessionStorage.getItem('lastYear') || (
 // mapping disease key -> filename(s) (prefer JSON if present)
 const datasetsMap = {
   'HIV': 'HIV_data.xlsx',
-  'TB': 'TB_data.xlsx',
+  'TB': 'TB.xlsx',
   'Diabetes': 'Diabetes.xlsx',
   'Hepatitis-B': 'HepatitisB.xlsx'
+  'Hepatitis-A': 'HepatitisA.xlsx'
+  'Hepatitis-C': 'HepatitisC.xlsx'
+  'Gonorrhea':'Gonorrhea.xlsx'
+  'Chlamydia':'Chlamydia.xlsx'
+  'syphilis':'syphilis.xlsx'
 };
+
 
 const dsSelectHeader = document.getElementById('dsSelectHeader');
 const yearSelectHeader = document.getElementById('yearSelectHeader');
