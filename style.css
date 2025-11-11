@@ -194,6 +194,56 @@ body{
 .link-muted{ color:var(--muted); font-weight:600; text-decoration: none; }
 
 /* End of style.css */
+/* Layout tweaks for map.html heatmap repositioning */
+.container { max-width: 1200px; margin: 0 auto; padding: 18px; }
+
+/* Two-column grid for charts + right column */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 320px; /* left flexible, right sidebar */
+  gap: 20px;
+  align-items: start;
+}
+
+/* Left column wrapper (explicit for clarity) */
+.left-column { display: contents; } /* keep children flow while allowing left-column semantics */
+.right-column { display: contents; }
+
+/* Full-width heatmap row under the main grid */
+.grid.heatmap-full-width {
+  grid-template-columns: 1fr;
+  margin-top: 18px;
+}
+
+/* Heatmap sizing */
+.heatmap-wrapper.heatmap-wide {
+  width: 100%;
+  max-width: 1300px; /* widen to suit layout */
+  height: 460px; /* taller for readability */
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+/* Make sure the heatmap canvas fills wrapper */
+#matrixHeatmap {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Map sizing (keeps existing behaviour, tweak if needed) */
+#map {
+  width: 100%;
+  height: 460px;
+}
+
+/* Responsive adjustments: stack columns on narrow screens */
+@media (max-width: 980px) {
+  .grid { grid-template-columns: 1fr; }
+  .heatmap-wrapper.heatmap-wide { max-width: 100%; height: 420px; }
+  #map { height: 360px; }
+}
+
 
 
 
