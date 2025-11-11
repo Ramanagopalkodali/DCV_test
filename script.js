@@ -21,11 +21,16 @@
 
   // datasets map (root files)
   const datasetsMap = {
-    'HIV': 'HIV_data.xlsx',
-    'TB': 'TB_data.xlsx',
-    'Diabetes': 'Diabetes.xlsx',
-    'Hepatitis-B': 'HepatitisB.xlsx'
-  };
+  'HIV': 'HIV_data.xlsx',
+  'TB': 'TB.xlsx',
+  'Diabetes': 'Diabetes.xlsx',
+  'Hepatitis-B': 'HepatitisB.xlsx'
+  'Hepatitis-A': 'HepatitisA.xlsx'
+  'Hepatitis-C': 'HepatitisC.xlsx'
+  'Gonorrhea':'Gonorrhea.xlsx'
+  'Chlamydia':'Chlamydia.xlsx'
+  'syphilis':'syphilis.xlsx'
+};
 
   const diseaseSelect = document.getElementById('diseaseSelect');
   const yearSelect = document.getElementById('yearInput');
