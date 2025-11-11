@@ -41,58 +41,68 @@
     </div>
   </header>
 
-  <main class="container">
-    <div class="grid">
-      <div>
-        <div class="card">
-          <div class="section-title">Choropleth — State cases</div>
-          <div id="map"></div>
-          <div style="display:flex; justify-content:space-between; margin-top:12px;">
-            <div id="totalCases" style="font-weight:700">Total USA Cases: —</div>
-            <div id="selectedInfo" class="note"></div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:16px;">
-          <div class="section-title">Cases by State — Selected Year</div>
-          <div style="min-height:320px;">
-            <canvas id="casesBar" class="chart-canvas"></canvas>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:16px;">
-          <div class="section-title">USA Trend — All Years</div>
-          <div style="min-height:320px;">
-            <canvas id="casesLine" class="chart-canvas"></canvas>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:16px;">
-          <div class="section-title">Distribution — State counts</div>
-          <div style="min-height:240px;">
-            <canvas id="casesHist" class="chart-small chart-canvas"></canvas>
-          </div>
+<main class="container">
+  <div class="grid">
+    <div class="left-column">
+      <div class="card">
+        <div class="section-title">Choropleth — State cases</div>
+        <div id="map"></div>
+        <div style="display:flex; justify-content:space-between; margin-top:12px;">
+          <div id="totalCases" style="font-weight:700">Total USA Cases: —</div>
+          <div id="selectedInfo" class="note"></div>
         </div>
       </div>
 
-      <aside>
-        <div class="card">
-          <div class="section-title">Heatmap — state × year (matrix)</div>
-          <div class="heatmap-wrapper" id="heatmapWrapper">
-            <canvas id="matrixHeatmap"></canvas>
-            <!-- optional scroll sliders could be added if desired: 
-                 <input id="heatmapHoriz" type="range" /> <input id="heatmapVert" type="range" />
-            -->
-          </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="section-title">Cases by State — Selected Year</div>
+        <div style="min-height:320px;">
+          <canvas id="casesBar" class="chart-canvas"></canvas>
         </div>
+      </div>
 
-        <div class="card" style="margin-top:16px;">
-          <div class="section-title">Legend</div>
-          <div id="legendWrap"></div>
+      <div class="card" style="margin-top:16px;">
+        <div class="section-title">USA Trend — All Years</div>
+        <div style="min-height:320px;">
+          <canvas id="casesLine" class="chart-canvas"></canvas>
         </div>
-      </aside>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="section-title">Distribution — State counts</div>
+        <div style="min-height:240px;">
+          <canvas id="casesHist" class="chart-small chart-canvas"></canvas>
+        </div>
+      </div>
     </div>
-  </main>
+
+    <!-- right column kept narrow for legend & small controls -->
+    <aside class="right-column">
+      <div class="card">
+        <div class="section-title">Legend</div>
+        <div id="legendWrap"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="section-title">Quick actions</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button id="downloadCSVHeader" class="btn-green">Download CSV</button>
+          <button id="loadHeader" class="btn-light">Reload data</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- HEATMAP: full-width, below the two-column grid -->
+  <div class="grid heatmap-full-width">
+    <div class="card" style="width:100%;">
+      <div class="section-title">Heatmap — state × year (matrix)</div>
+      <div class="heatmap-wrapper heatmap-wide" id="heatmapWrapper">
+        <canvas id="matrixHeatmap"></canvas>
+      </div>
+    </div>
+  </div>
+</main>
+
 
   <!-- libs (SheetJS, Chart.js, matrix plugin, optional zoom/pan, Leaflet) -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
