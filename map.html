@@ -41,58 +41,53 @@
     </div>
   </header>
 
-<main class="container">
-  <div class="grid">
-    <div class="left-column">
-      <div class="card">
-        <div class="section-title">Choropleth — State cases</div>
-        <div id="map"></div>
-        <div style="display:flex; justify-content:space-between; margin-top:12px;">
-          <div id="totalCases" style="font-weight:700">Total USA Cases: —</div>
-          <div id="selectedInfo" class="note"></div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:16px;">
-        <div class="section-title">Cases by State — Selected Year</div>
-        <div style="min-height:320px;">
-          <canvas id="casesBar" class="chart-canvas"></canvas>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:16px;">
-        <div class="section-title">USA Trend — All Years</div>
-        <div style="min-height:320px;">
-          <canvas id="casesLine" class="chart-canvas"></canvas>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:16px;">
-        <div class="section-title">Distribution — State counts</div>
-        <div style="min-height:240px;">
-          <canvas id="casesHist" class="chart-small chart-canvas"></canvas>
-        </div>
-      </div>
+<main class="container single-col">
+  <!-- Choropleth Map -->
+  <div class="card">
+    <div class="section-title">Choropleth — State cases</div>
+    <div id="map"></div>
+    <div style="display:flex; justify-content:space-between; margin-top:12px;">
+      <div id="totalCases" style="font-weight:700">Total USA Cases: —</div>
+      <div id="selectedInfo" class="note"></div>
     </div>
-
-    <!-- right column kept narrow for legend & small controls -->
-    <aside class="right-column">
-      <div class="card">
-        <div class="section-title">Legend</div>
-        <div id="legendWrap"></div>
-      </div>
-
-    </aside>
   </div>
 
-  <!-- HEATMAP: full-width, below the two-column grid -->
-  <div class="grid heatmap-full-width">
-    <div class="card" style="width:100%;">
-      <div class="section-title">Heatmap — state × year (matrix)</div>
-      <div class="heatmap-wrapper heatmap-wide" id="heatmapWrapper">
-        <canvas id="matrixHeatmap"></canvas>
-      </div>
+  <!-- Cases by State — Selected Year -->
+  <div class="card" style="margin-top:20px;">
+    <div class="section-title">Cases by State — Selected Year</div>
+    <div style="min-height:320px;">
+      <canvas id="casesBar" class="chart-canvas"></canvas>
     </div>
+  </div>
+
+  <!-- USA Trend — All Years -->
+  <div class="card" style="margin-top:20px;">
+    <div class="section-title">USA Trend — All Years</div>
+    <div style="min-height:320px;">
+      <canvas id="casesLine" class="chart-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Distribution — State counts -->
+  <div class="card" style="margin-top:20px;">
+    <div class="section-title">Distribution — State counts</div>
+    <div style="min-height:260px;">
+      <canvas id="casesHist" class="chart-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Heatmap — state × year (matrix) -->
+  <div class="card" style="margin-top:20px;">
+    <div class="section-title">Heatmap — state × year (matrix)</div>
+    <div class="heatmap-wrapper heatmap-wide" id="heatmapWrapper">
+      <canvas id="matrixHeatmap"></canvas>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="card" style="margin-top:20px;">
+    <div class="section-title">Legend</div>
+    <div id="legendWrap"></div>
   </div>
 </main>
 
